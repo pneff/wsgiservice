@@ -20,7 +20,8 @@ class Router(object):
                 prev_pos = match.end()
             regexp += re.escape(path[prev_pos:])
             # Allow an extension to overwrite the mime type
-            regexp += '(?P<_extension>\.[a-z]+)?$'
+            extensions = "|".join(Response._extension_map.keys())
+            regexp += '(?P<_extension>' + extensions + ')?$'
             self._routes.append((re.compile(regexp).match, res))
 
     def __call__(self, path):

@@ -71,3 +71,8 @@ class UserEmailView(wsgiservice.Resource):
 
 
 app = wsgiservice.get_app(globals(), '/1')
+
+if __name__ == '__main__':
+    from wsgiref.simple_server import make_server
+    print "Running on port 8000"
+    make_server('', 8000, app).serve_forever()

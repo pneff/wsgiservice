@@ -51,7 +51,7 @@ class Users(wsgiservice.Resource):
         """Create a new document, assigning a unique ID. Parameters are
         passed in as key/value pairs in the POST data."""
         id = str(uuid.uuid4())
-        res = Document()
+        res = User()
         return res.PUT(request, id)
     POST.to_text_xml = status_xml
 

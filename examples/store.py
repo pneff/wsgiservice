@@ -2,7 +2,7 @@
 the documents. This is currently a dummy implementation with ony in-memory
 storage."""
 
-import uuid4
+import uuid
 import wsgiservice
 
 data = {}

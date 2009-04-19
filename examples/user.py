@@ -4,7 +4,7 @@ storage.
 
 Similar to store.py but uses more of the REST framework."""
 
-import uuid4
+import uuid
 import wsgiservice
 
 users = {}

@@ -5,32 +5,8 @@ import re
 from xml.sax.saxutils import escape as xml_escape
 import mimeparse
 
+import wsgiservice.routing
 from wsgiservice.decorators import *
-
-class Router(object):
-    def __init__(self, resources):
-        self._routes = []
-        search_vars = re.compile(r'\{(\w+)\}').finditer
-        for res in resources:
-            # Compile regular expression for each path
-            path, regexp, prev_pos = res._path, '^', 0
-            for match in search_vars(path):
-                regexp += re.escape(path[prev_pos:match.start()])
-                # .+? - match any character but non-greedy
-                regexp += '(?P<{0}>.+?)'.format(match.group(1))
-                prev_pos = match.end()
-            regexp += re.escape(path[prev_pos:])
-            # Allow an extension to overwrite the mime type
-            extensions = "|".join(Response._extension_map.keys())
-            regexp += '(?P<_extension>' + extensions + ')?$'
-            self._routes.append((re.compile(regexp).match, res))
-
-    def __call__(self, path):
-        for match, res in self._routes:
-            retval = match(path)
-            if retval:
-                return (retval.groupdict(), res)
-
 
 class Response(object):
     _status_map = {
@@ -148,7 +124,7 @@ class Application(object):
     """WSGI application wrapping a set of WsgiService resources."""
     def __init__(self, resources):
         self._resources = resources
-        self._urlmap = Router(resources)
+        self._urlmap = wsgiservice.routing.Router(resources)
 
     def __call__(self, environ, start_response):
         # Find the correct resource

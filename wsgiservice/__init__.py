@@ -18,7 +18,8 @@ class Router(object):
                 regexp += '(?P<{0}>.+)'.format(match.group(1))
                 prev_pos = match.end()
             regexp += re.escape(path[prev_pos:])
-            regexp += '$'
+            # Allow an extension to overwrite the mime type
+            regexp += '(?P<_extension>\.[a-z]+)?$'
             self._routes.append((re.compile(regexp).match, res))
 
     def __call__(self, path):
@@ -72,8 +73,13 @@ class Response(object):
         504: '504 Gateway Timeout',
         505: '505 HTTP Version Not Supported',
     }
+    _extension_map = {
+        '.xml': 'text/xml',
+        '.json': 'application/json',
+    }
 
-    def __init__(self, body, environ, resource=None, headers=None, status=200):
+    def __init__(self, body, environ, resource=None, headers=None,
+            status=200, extension=None):
         self._environ = environ
         self._resource = resource
         self._body = body
@@ -81,6 +87,8 @@ class Response(object):
         self.type = mimeparse.best_match(self._available_types,
             environ['HTTP_ACCEPT'])
         self.convert_type = self.type
+        if extension in self._extension_map:
+            self.type = self.convert_type = self._extension_map[extension]
         self._headers = {'Content-type': self.type}
         if headers:
             for key in headers:
@@ -162,7 +170,8 @@ class Application(object):
                 elif param in request.POST:
                     params.append(request.POST[param])
             response = method(*params)
-            return Response(response, environ, instance)
+            return Response(response, environ, instance,
+                extension=path_params.get('_extension', None))
         else:
             methods = [method for method in dir(instance)
                 if method.upper() == method

@@ -15,3 +15,14 @@ def test_validate_resource():
     assert User.__name__ == 'User'
     assert User._validations['id'] == {'re': r'[-0-9a-zA-Z]{36}',
         'doc': 'Document ID, must be a valid UUID.'}
+
+def test_validate_method():
+    class User(wsgiservice.Resource):
+        @wsgiservice.validate('password', doc="User's password")
+        @wsgiservice.validate('username', re='[a-z]+')
+        def PUT(self, password):
+            pass
+    print User.PUT._validations
+    assert User.PUT.__name__ == 'PUT'
+    assert User.PUT._validations['password'] == {'re': None, 'doc': "User's password"}
+    assert User.PUT._validations['username'] == {'re': '[a-z]+', 'doc': None}

@@ -43,8 +43,18 @@ class Application(object):
             return self._call_resource(res, environ, start_response)
 
     def _call_resource(self, res, environ, start_response):
-        start_response('200 OK', [])
-        return ''
+        method = environ['REQUEST_METHOD']
+        instance = res()
+        if hasattr(instance, method) and callable(getattr(instance, method)):
+            status = '200 OK'
+            headers = [('Content-type', 'text/xml')]
+            start_response(status, headers)
+            return "Resource can be called with {0}".format(method)
+        else:
+            status = '405 Method Not Allowed'
+            headers = [('Content-type', 'text/xml')]
+            start_response(status, headers)
+            return "<error>invalid method on resource</error>"
 
 
 def mount(path):

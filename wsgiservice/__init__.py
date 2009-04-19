@@ -137,8 +137,11 @@ class Response(object):
 
 class Request(object):
     def __init__(self, environ):
-        self.POST = cgi.FieldStorage(fp=environ['wsgi.input'],
-            environ=environ, keep_blank_values=1)
+        self.POST = {}
+        post = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ,
+            keep_blank_values=1)
+        for key in post:
+            self.POST[key] = post[key].value
 
 
 class Application(object):
@@ -178,7 +181,7 @@ class Application(object):
                 elif param in path_params:
                     value = path_params[param]
                 elif param in request.POST:
-                    value = request.POST[param].value
+                    value = request.POST[param]
                 self._validate_param(method, param, value)
                 params.append(value)
             response = method(*params)

@@ -1,7 +1,7 @@
 """WsgiService module containing all the root level definitions."""
-import re
+import cgi
 import functools
-import routes.base
+import re
 
 class Router(object):
     def __init__(self, resources):
@@ -20,8 +20,9 @@ class Router(object):
 
     def __call__(self, path):
         for match, res in self._routes:
-            if match(path):
-                return res
+            retval = match(path)
+            if retval:
+                return (retval.groupdict(), res)
 
 
 class Response(object):
@@ -84,6 +85,12 @@ class Response(object):
         return self._body
 
 
+class Request(object):
+    def __init__(self, environ):
+        self.POST = cgi.FieldStorage(fp=environ['wsgi.input'],
+            environ=environ, keep_blank_values=1)
+
+
 class Application(object):
     """WSGI application wrapping a set of WsgiService resources."""
     def __init__(self, resources):
@@ -100,16 +107,28 @@ class Application(object):
 
     def _handle_request(self, environ):
         path = environ['PATH_INFO']
-        res = self._urlmap(path)
+        path_params, res = self._urlmap(path)
         if not res:
             return Response({'error': 'not found'}, environ, status=404)
         else:
-            return self._call_resource(res, environ)
+            return self._call_resource(res, path_params, environ)
 
-    def _call_resource(self, res, environ):
+    def _call_resource(self, res, path_params, environ):
         method = environ['REQUEST_METHOD']
         instance = res()
         if hasattr(instance, method) and callable(getattr(instance, method)):
+            method = getattr(instance, method)
+            method_params = method.func_code.co_varnames[1:method.func_code.co_argcount]
+            params = []
+            request = Request(environ)
+            for param in method_params:
+                if param == 'request':
+                    params.append(request)
+                elif param in path_params:
+                    params.append(path_params[param])
+                elif param in request.POST:
+                    params.append(request.POST[param])
+            response = method(*params)
             ret = "Resource can be called with {0}".format(method)
             return Response(ret, environ, instance)
         else:

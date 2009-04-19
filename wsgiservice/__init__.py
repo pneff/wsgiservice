@@ -1,10 +1,11 @@
 """WsgiService module containing all the root level definitions."""
 import cgi
-import functools
 import json
 import re
 from xml.sax.saxutils import escape as xml_escape
 import mimeparse
+
+from wsgiservice.decorators import *
 
 class Router(object):
     def __init__(self, resources):
@@ -203,30 +204,6 @@ class Application(object):
                 raise Exception("{0} value {1} does not validate.".format(param, value))
         elif value is None or len(value) == 0:
             raise Exception("Value for {0} must not be empty.".format(param))
-
-def mount(path):
-    "Mounts a Resource at the given path."
-    def wrap(cls):
-        cls._path = path
-        return cls
-    return wrap
-
-
-def validate(name, re=None, doc=None):
-    "Validates the given input parameter on input."
-    def wrap(cls_or_func):
-        if not hasattr(cls_or_func, '_validations'):
-            cls_or_func._validations = {}
-        cls_or_func._validations[name] = {'re':re, 'doc':doc}
-        return cls_or_func
-    return wrap
-
-
-def expires(duration):
-    "Sets the expirations header to the given duration."
-    def wrap(func):
-        return func
-    return wrap
 
 class duration(object):
     def __getattr__(self, key):

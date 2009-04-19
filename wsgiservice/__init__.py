@@ -71,11 +71,14 @@ class Response(object):
         505: '505 HTTP Version Not Supported',
     }
 
-    def __init__(self, body, environ, resource=None, status=200):
+    def __init__(self, body, environ, resource=None, headers=None, status=200):
         self._environ = environ
         self._resource = resource
         self._body = body
         self._headers = {'Content-type': 'text/xml'}
+        if headers:
+            for key in headers:
+                self._headers[key] = headers[key]
         self.status = self._status_map[status]
 
     @property
@@ -132,7 +135,11 @@ class Application(object):
             response = method(*params)
             return Response(response, environ, instance)
         else:
-            return Response('Invalid method on resource', environ, instance, 405)
+            methods = [method for method in dir(instance)
+                if method.upper() == method
+                and callable(getattr(instance, method))]
+            return Response('Invalid method on resource', environ, instance,
+                status=405, headers={'Allow': ", ".join(methods)})
 
 
 def mount(path):

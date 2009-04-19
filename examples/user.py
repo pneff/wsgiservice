@@ -10,10 +10,10 @@ import wsgiservice
 users = {}
 
 
-def status_xml(self, retval):
+def status_xml(retval):
     """XML response for status of PUT and POST."""
     return '<status saved="{0}"><id>{1}</id></status>'.format(
-        retval['id'], retval['saved'])
+        retval['saved'], retval['id'])
 
 
 @wsgiservice.mount('/{id}')
@@ -36,13 +36,13 @@ class User(wsgiservice.Resource):
         if password:
             users[id]['password'] = password
         return {'id': id, 'saved': True}
-    PUT.to_xml = status_xml
+    PUT.to_text_xml = status_xml
 
     def DELETE(self, id):
         "Delete the document indicated by the ID."
         del users[id]
         return {'id': id, 'deleted': True}
-    DELETE.to_xml = status_xml
+    DELETE.to_text_xml = status_xml
 
 
 @wsgiservice.mount('/')
@@ -53,7 +53,7 @@ class Users(wsgiservice.Resource):
         id = str(uuid.uuid4())
         res = Document()
         return res.PUT(request, id)
-    POST.to_xml = status_xml
+    POST.to_text_xml = status_xml
 
 
 @wsgiservice.mount('/auth/{email}')

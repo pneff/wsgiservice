@@ -15,7 +15,8 @@ class Router(object):
             path, regexp, prev_pos = res._path, '^', 0
             for match in search_vars(path):
                 regexp += re.escape(path[prev_pos:match.start()])
-                regexp += '(?P<{0}>.+)'.format(match.group(1))
+                # .+? - match any character but non-greedy
+                regexp += '(?P<{0}>.+?)'.format(match.group(1))
                 prev_pos = match.end()
             regexp += re.escape(path[prev_pos:])
             # Allow an extension to overwrite the mime type
@@ -78,17 +79,23 @@ class Response(object):
         '.json': 'application/json',
     }
 
-    def __init__(self, body, environ, resource=None, headers=None,
-            status=200, extension=None):
+    def __init__(self, body, environ, resource=None, method=None,
+            headers=None, status=200, extension=None):
         self._environ = environ
         self._resource = resource
         self._body = body
         self._available_types = ['application/json', 'text/xml']
         self.type = mimeparse.best_match(self._available_types,
             environ['HTTP_ACCEPT'])
-        self.convert_type = self.type
         if extension in self._extension_map:
-            self.type = self.convert_type = self._extension_map[extension]
+            self.type = self._extension_map[extension]
+        self.convert_type = self.type
+        if method and self.convert_type:
+            to_type = re.sub('[^a-zA-Z_]', '_', self.convert_type)
+            to_type_method = 'to_' + to_type
+            if hasattr(method, to_type_method):
+                self._body = getattr(method, to_type_method)(self._body)
+                self.convert_type = None
         self._headers = {'Content-type': self.type}
         if headers:
             for key in headers:
@@ -169,11 +176,11 @@ class Application(object):
                 elif param in path_params:
                     value = path_params[param]
                 elif param in request.POST:
-                    value = request.POST[param]
+                    value = request.POST[param].value
                 self._validate_param(method, param, value)
                 params.append(value)
             response = method(*params)
-            return Response(response, environ, instance,
+            return Response(response, environ, instance, method,
                 extension=path_params.get('_extension', None))
         else:
             methods = [method for method in dir(instance)

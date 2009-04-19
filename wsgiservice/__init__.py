@@ -3,6 +3,8 @@ import cgi
 import functools
 import json
 import re
+from xml.sax.saxutils import escape as xml_escape
+import mimeparse
 
 class Router(object):
     def __init__(self, resources):
@@ -75,7 +77,11 @@ class Response(object):
         self._environ = environ
         self._resource = resource
         self._body = body
-        self._headers = {'Content-type': 'text/xml'}
+        self._available_types = ['application/json', 'text/xml']
+        self.type = mimeparse.best_match(self._available_types,
+            environ['HTTP_ACCEPT'])
+        self.convert_type = self.type
+        self._headers = {'Content-type': self.type}
         if headers:
             for key in headers:
                 self._headers[key] = headers[key]
@@ -86,7 +92,30 @@ class Response(object):
         return self._headers.items()
 
     def __str__(self):
-        return json.dumps(self._body)
+        if self.convert_type is None:
+            # Assume body is already in the correct output format
+            return self._body
+        elif self.convert_type == 'application/json':
+            return json.dumps(self._body)
+        elif self.convert_type == 'text/xml':
+            return self._to_xml(self._body)
+
+    def _to_xml(self, value):
+        """Converts value to XML."""
+        retval = []
+        if isinstance(value, dict):
+            for key, value in value.iteritems():
+                retval.append('<' + xml_escape(str(key)) + '>')
+                retval.append(self._to_xml(value))
+                retval.append('</' + xml_escape(str(key)) + '>')
+        elif isinstance(value, list):
+            for key, value in enumerate(value):
+                retval.append('<' + xml_escape(str(key)) + '>')
+                retval.append(self._to_xml(value))
+                retval.append('</' + xml_escape(str(key)) + '>')
+        else:
+            retval.append(xml_escape(str(value)))
+        return "".join(retval)
 
 
 class Request(object):

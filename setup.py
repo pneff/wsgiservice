@@ -6,5 +6,6 @@ setup(name='WsgiService',
       url='http://github.com/pneff/wsgiservice/tree/master',
       packages=find_packages(),
       install_requires=[
+        'mimeparse',
       ],
 )

@@ -163,12 +163,15 @@ class Application(object):
             params = []
             request = Request(environ)
             for param in method_params:
+                value = None
                 if param == 'request':
-                    params.append(request)
+                    value = request
                 elif param in path_params:
-                    params.append(path_params[param])
+                    value = path_params[param]
                 elif param in request.POST:
-                    params.append(request.POST[param])
+                    value = request.POST[param]
+                self._validate_param(method, param, value)
+                params.append(value)
             response = method(*params)
             return Response(response, environ, instance,
                 extension=path_params.get('_extension', None))
@@ -179,6 +182,19 @@ class Application(object):
             return Response('Invalid method on resource', environ, instance,
                 status=405, headers={'Allow': ", ".join(methods)})
 
+    def _validate_param(self, method, param, value):
+        rules = None
+        if hasattr(method, '_validations') and param in method._validations:
+            rules = method._validations[param]
+        elif hasattr(method.im_class, '_validations') and param in method.im_class._validations:
+            rules = method.im_class._validations[param]
+        if rules is None:
+            return
+        if 're' in rules and rules['re']:
+            if not re.search('^' + rules['re'] + '$', value):
+                raise Exception("{0} value {1} does not validate.".format(param, value))
+        elif value is None or len(value) == 0:
+            raise Exception("Value for {0} must not be empty.".format(param))
 
 def mount(path):
     "Mounts a Resource at the given path."
@@ -187,13 +203,42 @@ def mount(path):
         return cls
     return wrap
 
+
+def validate(name, re=None, doc=None):
+    "Validates the given input parameter on input."
+    def wrap(cls_or_func):
+        if not hasattr(cls_or_func, '_validations'):
+            cls_or_func._validations = {}
+        cls_or_func._validations[name] = {'re':re, 'doc':doc}
+        return cls_or_func
+    return wrap
+
+
+def expires(duration):
+    "Sets the expirations header to the given duration."
+    def wrap(func):
+        return func
+    return wrap
+
+class duration(object):
+    def __getattr__(self, key):
+        print "duration: {0}".format(key)
+        return key
+duration = duration()
+
 def get_app(defs):
     """Returns a WSGI app which serves the objects in the defs. Usually this
     is called with return value globals() from the module where the resources
     are defined. The returned WSGI application will serve all subclasses of
     Resource.
     """
-    resources = [d for d in defs.values() if d in Resource.__subclasses__()]
+    if isinstance(defs, tuple):
+        # A list of different applications mounted at different paths
+        # TODO
+        defs = defs[1]
+        resources = [d for d in defs.values() if d in Resource.__subclasses__()]
+    else:
+        resources = [d for d in defs.values() if d in Resource.__subclasses__()]
     return Application(resources)
 
 class Resource(object):

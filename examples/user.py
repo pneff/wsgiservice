@@ -17,9 +17,9 @@ def status_xml(self, retval):
 
 
 @wsgiservice.mount('/{id}')
-@wsgiservice.validate('id', re=r'[0-9a-zA-Z-]{36}', doc='Document ID, must be a valid UUID.')
+@wsgiservice.validate('id', re=r'[-0-9a-zA-Z]{36}', doc='Document ID, must be a valid UUID.')
 class User(wsgiservice.Resource):
-    @wsgiservice.expires(wsgiservice.duration.1day)
+    @wsgiservice.expires(wsgiservice.duration.day1)
     def GET(self, id):
         "Return the document indicated by the ID."
         with wsgiservice.etag(id):
@@ -56,11 +56,11 @@ class Users(wsgiservice.Resource):
     POST.to_xml = status_xml
 
 
-@wsgiservice.mount('/{email}')
+@wsgiservice.mount('/auth/{email}')
 class UserEmailView(wsgiservice.Resource):
     @wsgiservice.validate('email', doc="User's email. This is the unique identifier of a user.")
     @wsgiservice.validate('password', doc="User's password.")
-    @wsgiservice.expires(wsgiservice.duration.4hours)
+    @wsgiservice.expires(wsgiservice.duration.hours4)
     def POST(self, email, password, request):
         """Checks if the given user/password combination is correct. Returns
         the user hash if successful, returns False otherwise."""
@@ -69,8 +69,7 @@ class UserEmailView(wsgiservice.Resource):
         else:
             return False
 
-
-app = wsgiservice.get_app(globals(), '/1')
+app = wsgiservice.get_app(('/1', globals()))
 
 if __name__ == '__main__':
     from wsgiref.simple_server import make_server

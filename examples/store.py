@@ -34,7 +34,6 @@ class Documents(wsgiservice.Resource):
         res = Document()
         return res.PUT(request, id)
 
-
 app = wsgiservice.get_app(globals())
 
 if __name__ == '__main__':

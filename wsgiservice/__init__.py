@@ -77,9 +77,9 @@ class Response(object):
         self._headers = {'Content-type': 'text/xml'}
         self.status = self._status_map[status]
 
-    def __getattr__(self, attr):
-        if attr == 'headers':
-            return self._headers.items()
+    @property
+    def headers(self):
+        return self._headers.items()
 
     def __str__(self):
         return self._body

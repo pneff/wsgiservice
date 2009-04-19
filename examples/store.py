@@ -17,8 +17,8 @@ class Document(wsgiservice.Resource):
         """Overwrite or create the document indicated by the ID. Parameters
         are passed as key/value pairs in the POST data."""
         data.setdefault(id, {'id': id})
-        for key, value in enumerate(request.POST):
-            data[id][key] = value
+        for key in request.POST:
+            data[id][key] = request.POST[key].value
         return {'id': id, 'saved': True}
 
     def DELETE(self, id):

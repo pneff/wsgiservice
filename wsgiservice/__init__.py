@@ -1,6 +1,7 @@
 """WsgiService module containing all the root level definitions."""
 import cgi
 import functools
+import json
 import re
 
 class Router(object):
@@ -82,7 +83,7 @@ class Response(object):
         return self._headers.items()
 
     def __str__(self):
-        return self._body
+        return json.dumps(self._body)
 
 
 class Request(object):
@@ -129,8 +130,7 @@ class Application(object):
                 elif param in request.POST:
                     params.append(request.POST[param])
             response = method(*params)
-            ret = "Resource can be called with {0}".format(method)
-            return Response(ret, environ, instance)
+            return Response(response, environ, instance)
         else:
             return Response('Invalid method on resource', environ, instance, 405)
 

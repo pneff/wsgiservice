@@ -13,11 +13,11 @@ class Document(wsgiservice.Resource):
         "Return the document indicated by the ID."
         return data[id]
 
-    def PUT(self, id):
+    def PUT(self, request, id):
         """Overwrite or create the document indicated by the ID. Parameters
         are passed as key/value pairs in the POST data."""
         data.setdefault(id, {'id': id})
-        for key, value in enumerate(wsgiservice.request.POST):
+        for key, value in enumerate(request.POST):
             data[id][key] = value
         return {'id': id, 'saved': True}
 
@@ -27,12 +27,12 @@ class Document(wsgiservice.Resource):
 
 @wsgiservice.mount('/')
 class Documents(wsgiservice.Resource):
-    def POST(self):
+    def POST(self, request):
         """Create a new document, assigning a unique ID. Parameters are
         passed in as key/value pairs in the POST data."""
         id = str(uuid.uuid4())
         res = Document()
-        return res.PUT(id)
+        return res.PUT(request, id)
 
 
 app = wsgiservice.get_app(globals())

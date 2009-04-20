@@ -74,7 +74,7 @@ class Response(object):
             if hasattr(method, to_type_method):
                 self._body = getattr(method, to_type_method)(self._body)
                 self.convert_type = None
-        self._headers = {'Content-type': self.type}
+        self._headers = {'Content-Type': self.type}
         if headers:
             for key in headers:
                 self._headers[key] = headers[key]

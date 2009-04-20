@@ -1,6 +1,6 @@
 WsgiService is a project to create a lean Python WSGI framework for very easy creation of REST services.
 
-A REST service in this context is a HTTP service to be used my machines - thus working with XML, JSON and other machine-readable formats.
+A REST service in this context is a HTTP service to be used by machines. So a service should output something like XML, JSON or any other machine-readable format.
 
 ## Goals ##
 

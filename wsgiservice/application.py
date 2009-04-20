@@ -1,6 +1,8 @@
 """Components responsible for building the WSGI application."""
+import re
 import wsgiservice
 from wsgiservice import Response
+from wsgiservice.exceptions import ValidationException
 
 class Application(object):
     """WSGI application wrapping a set of WsgiService resources."""
@@ -61,11 +63,11 @@ class Application(object):
             rules = method.im_class._validations[param]
         if rules is None:
             return
-        if 're' in rules and rules['re']:
+        if value is None or len(value) == 0:
+            raise ValidationException("Value for {0} must not be empty.".format(param))
+        elif 're' in rules and rules['re']:
             if not re.search('^' + rules['re'] + '$', value):
-                raise Exception("{0} value {1} does not validate.".format(param, value))
-        elif value is None or len(value) == 0:
-            raise Exception("Value for {0} must not be empty.".format(param))
+                raise ValidationException("{0} value {1} does not validate.".format(param, value))
 
 def get_app(defs):
     """Returns a WSGI app which serves the objects in the defs. Usually this

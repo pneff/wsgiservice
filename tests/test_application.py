@@ -123,6 +123,15 @@ def test_with_expires_calculations():
     assert res._headers['Cache-Control'] == 'max-age=138'
     assert res._headers['Expires'] == 'Mon, 20 Apr 2009 16:55:45 GMT'
 
+def test_with_expires_calculations_double_wrapped():
+    app = wsgiservice.get_app(globals())
+    env = {'PATH_INFO': '/res4', 'REQUEST_METHOD': 'POST',
+        'wsgi.input': StringIO.StringIO('')}
+    res = app._handle_request(env)
+    print res._headers
+    assert res._headers['Cache-Control'] == 'max-age=139'
+    assert res._headers['Expires'] == 'Mon, 20 Apr 2009 16:55:46 GMT'
+
 
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'
@@ -153,3 +162,8 @@ class Resource4(wsgiservice.Resource):
     @wsgiservice.expires(138, lambda: time.gmtime(1240250007))
     def GET(self, id):
         return "Called with id: {0}".format(id)
+
+    @wsgiservice.expires(139, lambda: time.gmtime(1240250007))
+    @wsgiservice.expires(138, lambda: time.gmtime(1240250007))
+    def POST(self, id):
+        return "POST Called with id: {0}".format(id)

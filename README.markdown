@@ -4,6 +4,8 @@ A REST service in this context is a HTTP service to be used my machines - thus w
 
 ## Goals ##
 
+The primary guiding principle is that the actual service should be as easy and small to write as possible. And here's what the WsgiService framework will do for the developer:
+
 * Abstract away error and status code handling
 * Make it easy to create machine readable output
 * Easily validate input

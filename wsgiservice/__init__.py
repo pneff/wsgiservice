@@ -1,6 +1,6 @@
 """WsgiService module containing all the root level definitions."""
 import wsgiservice.routing
-from wsgiservice.decorators import *
+from wsgiservice.decorators import mount, validate, expires
 from wsgiservice.objects import Request, Response
 from wsgiservice.application import get_app
 

@@ -108,6 +108,14 @@ class Response(object):
         return "".join(retval)
 
 
+class MiniResponse(object):
+    """A small wrapper to return body content and headers easily. Mostly
+    needed so that the decoratores don't get too complex."""
+    def __init__(self, body, headers=None):
+        self.body = body
+        self.headers = headers or {}
+
+
 class Request(object):
     def __init__(self, environ):
         self.POST = {}

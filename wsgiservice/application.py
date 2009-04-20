@@ -2,6 +2,7 @@
 import re
 import wsgiservice
 from wsgiservice import Response
+from wsgiservice.objects import MiniResponse
 from wsgiservice.exceptions import ValidationException
 
 class Application(object):
@@ -32,7 +33,11 @@ class Application(object):
         instance = res()
         if hasattr(instance, method) and callable(getattr(instance, method)):
             method = getattr(instance, method)
-            method_params = method.func_code.co_varnames[1:method.func_code.co_argcount]
+            if hasattr(method, '_names'):
+                method_params = getattr(method, '_names')[1:]
+            else:
+                code = method.func_code
+                method_params = code.co_varnames[1:code.co_argcount]
             params = []
             request = wsgiservice.Request(environ)
             for param in method_params:
@@ -45,8 +50,11 @@ class Application(object):
                     value = request.POST[param]
                 self._validate_param(method, param, value)
                 params.append(value)
-            response = method(*params)
-            return Response(response, environ, instance, method,
+            body, headers = method(*params), None
+            if isinstance(body, MiniResponse):
+                body, headers = body.body, body.headers
+            return Response(body, environ, instance, method,
+                headers =headers,
                 extension=path_params.get('_extension', None))
         else:
             methods = [method for method in dir(instance)

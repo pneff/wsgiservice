@@ -1,5 +1,6 @@
 import mox
 import StringIO
+import time
 import wsgiservice
 import wsgiservice.application
 import wsgiservice.exceptions
@@ -8,9 +9,12 @@ def test_getapp():
     app = wsgiservice.get_app(globals())
     print app
     assert isinstance(app, wsgiservice.application.Application)
-    assert len(app._resources) == 2
-    assert app._resources[0] is Resource1
-    assert app._resources[1] is Resource2
+    assert len(app._resources) == 4
+    resources = (Resource1, Resource2, Resource3, Resource4)
+    assert app._resources[0] in resources
+    assert app._resources[1] in resources
+    assert app._resources[2] in resources
+    assert app._resources[3] in resources
 
 def test_app_handle_404():
     app = wsgiservice.get_app(globals())
@@ -102,6 +106,23 @@ def test_validation_with_re_mismatch_toolong():
     else:
         assert False, "Expected an exception!"
 
+def test_with_expires():
+    app = wsgiservice.get_app(globals())
+    env = {'PATH_INFO': '/res3', 'REQUEST_METHOD': 'GET',
+        'wsgi.input': StringIO.StringIO('')}
+    res = app._handle_request(env)
+    print res._headers
+    assert res._headers['Cache-Control'] == 'max-age=138'
+
+def test_with_expires_calculations():
+    app = wsgiservice.get_app(globals())
+    env = {'PATH_INFO': '/res4', 'REQUEST_METHOD': 'GET',
+        'wsgi.input': StringIO.StringIO('')}
+    res = app._handle_request(env)
+    print res._headers
+    assert res._headers['Cache-Control'] == 'max-age=138'
+    assert res._headers['Expires'] == 'Mon, 20 Apr 2009 16:55:45 GMT'
+
 
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'
@@ -120,3 +141,15 @@ class Resource2(wsgiservice.Resource):
         pass
     def PUT(self):
         pass
+
+class Resource3(wsgiservice.Resource):
+    _path = '/res3'
+    @wsgiservice.expires(138)
+    def GET(self, id):
+        return "Called with id: {0}".format(id)
+
+class Resource4(wsgiservice.Resource):
+    _path = '/res4'
+    @wsgiservice.expires(138, lambda: time.gmtime(1240250007))
+    def GET(self, id):
+        return "Called with id: {0}".format(id)

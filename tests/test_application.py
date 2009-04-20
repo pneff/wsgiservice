@@ -1,3 +1,4 @@
+import mox
 import StringIO
 import wsgiservice
 import wsgiservice.application
@@ -45,6 +46,17 @@ def test_app_post_simple():
     assert res.status == '200 OK'
     assert str(res) == "POST was called with request &lt;class 'wsgiservice.objects.Request'&gt;, id theid, foo bar"
 
+def test_app_wsgi():
+    app = wsgiservice.get_app(globals())
+    env = {'PATH_INFO': '/res1/theid.json', 'REQUEST_METHOD': 'GET',
+        'wsgi.input': ''}
+    start_response = mox.MockAnything()
+    start_response('200 OK', [('Content-Type', 'application/json')])
+    mox.Replay(start_response)
+    res = app(env, start_response)
+    print res
+    mox.Verify(start_response)
+    assert res == '"GET was called with request <class \'wsgiservice.objects.Request\'>, id theid, foo None"'
 
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'

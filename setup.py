@@ -7,5 +7,6 @@ setup(name='WsgiService',
       packages=find_packages(),
       install_requires=[
         'mimeparse',
+        'mox',
       ],
 )

@@ -18,6 +18,16 @@ Just as important as what WsgiService tries to accomplish is what it will never 
 
 * WsgiService is not planning to be a full-featured frontend framework. Use your existing framework of choice for that, e.g. [Pylons](http://pylonshq.com/).
 
+## Current implementation ##
+
+The current implementation is not production ready. But much has been done already:
+
+* Easy input validation of path parameters and POST input (validate decorator).
+* Send the correct expiry headers (expiry decorator).
+* Easy testing, the resources can be instantiated and tested without having to go through the WsgiService framework at all.
+* Content negotiation between JSON and XML. Both using the Accept request header and file extensions.
+* Almost complete test coverage.
+
 ## See also ##
 
 * [servicegen](http://github.com/pneff/servicegen/tree/master): The predecessor to WsgiService

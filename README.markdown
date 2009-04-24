@@ -28,6 +28,20 @@ The current implementation is not production ready. But much has been done alrea
 * Content negotiation between JSON and XML. Both using the Accept request header and file extensions.
 * Almost complete test coverage.
 
+## Open questions ##
+
+How should query string and POST data be handled? Take the following method definition:
+
+    def PUT(self, id, email=None, password=None):
+
+This requires and id and optionally an email and password - either extracted from the path routing information or from query string / POST data.
+
+There are two ways how query string and POST data could be handled. The framework could look at the method signature and see the values the developer is interested in. As a second option, the framework could just extract all passed values and hand them in.
+
+In case #1 we'd have to rely on Python's @func_code.co_varnames@ for introspection - which breaks with decorators.
+
+In the second case, Python would handle the validation - which would be a lot easier to implement. But if unexpected parameters get passed in that would cause an exception - something that could be fixed if wished by adding a @**kwargs@ argument to the method definition.
+
 ## See also ##
 
 * [servicegen](http://github.com/pneff/servicegen/tree/master): The predecessor to WsgiService

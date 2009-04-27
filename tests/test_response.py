@@ -6,13 +6,14 @@ def test_init():
     print r._headers
     assert r._headers['Content-Type'] == 'text/xml'
     assert r.headers[0] == ('Content-Type', 'text/xml')
-    assert str(r) == '<foo>bar</foo>'
+    print str(r)
+    assert str(r) == '<response><foo>bar</foo></response>'
 
 def test_get_xml_list():
     env = { 'HTTP_ACCEPT': '*/*' }
     r = wsgiservice.Response(['xy', 'foo'], env)
     print str(r)
-    assert str(r) == '<0>xy</0><1>foo</1>'
+    assert str(r) == '<response><0>xy</0><1>foo</1></response>'
 
 def test_init_extension():
     env = { 'HTTP_ACCEPT': 'text/xml' }
@@ -31,6 +32,15 @@ def test_convert_from_method():
     r = wsgiservice.Response({'foo': 'bar'}, env, method=GET)
     print str(r)
     assert str(r) == '<myxml/>'
+
+def test_convert_root_tag_from_method():
+    def GET():
+        return ['foo']
+    GET.text_xml_root = 'output'
+    env = {}
+    r = wsgiservice.Response(GET(), env, method=GET)
+    print str(r)
+    assert str(r) == '<output><0>foo</0></output>'
 
 def test_status():
     env = {}

@@ -59,6 +59,7 @@ class Response(object):
         self._environ = environ
         self._resource = resource
         self._body = body
+        self._method = method
         self._available_types = ['application/json', 'text/xml']
         self.type = mimeparse.best_match(self._available_types,
             environ.get('HTTP_ACCEPT', '*/*'))
@@ -88,7 +89,11 @@ class Response(object):
         elif self.convert_type == 'application/json':
             return json.dumps(self._body)
         elif self.convert_type == 'text/xml':
-            return self._to_xml(self._body)
+            xml = self._to_xml(self._body)
+            root_tag = 'response'
+            if hasattr(self._method, 'text_xml_root'):
+                root_tag = self._method.text_xml_root
+            return '<' + root_tag + '>' + xml + '</' + root_tag + '>'
 
     def _to_xml(self, value):
         """Converts value to XML."""

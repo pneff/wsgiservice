@@ -22,7 +22,7 @@ def test_app_handle_404():
     res = app._handle_request(env)
     print res
     assert res.status == '404 Not Found'
-    assert str(res) == '<error>not found</error>'
+    assert str(res) == '<response><error>not found</error></response>'
 
 def test_app_handle_method_not_allowed():
     app = wsgiservice.get_app(globals())
@@ -30,7 +30,7 @@ def test_app_handle_method_not_allowed():
     res = app._handle_request(env)
     print res
     assert res.status == '405 Method Not Allowed'
-    assert str(res) == '<error>Invalid method on resource</error>'
+    assert str(res) == '<response><error>Invalid method on resource</error></response>'
     assert res._headers['Allow'] == 'POST, PUT'
 
 def test_app_get_simple():
@@ -40,7 +40,7 @@ def test_app_get_simple():
     res = app._handle_request(env)
     print res
     assert res.status == '200 OK'
-    assert str(res) == "GET was called with request &lt;class 'wsgiservice.objects.Request'&gt;, id theid, foo None"
+    assert str(res) == "<response>GET was called with request &lt;class 'wsgiservice.objects.Request'&gt;, id theid, foo None</response>"
 
 def test_app_post_simple():
     app = wsgiservice.get_app(globals())
@@ -49,7 +49,7 @@ def test_app_post_simple():
     res = app._handle_request(env)
     print res
     assert res.status == '200 OK'
-    assert str(res) == "POST was called with request &lt;class 'wsgiservice.objects.Request'&gt;, id theid, foo 42"
+    assert str(res) == "<response>POST was called with request &lt;class 'wsgiservice.objects.Request'&gt;, id theid, foo 42</response>"
 
 def test_app_wsgi():
     app = wsgiservice.get_app(globals())

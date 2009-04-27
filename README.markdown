@@ -38,9 +38,9 @@ This requires and id and optionally an email and password - either extracted fro
 
 There are two ways how query string and POST data could be handled. The framework could look at the method signature and see the values the developer is interested in. As a second option, the framework could just extract all passed values and hand them in.
 
-In case #1 we'd have to rely on Python's @func_code.co_varnames@ for introspection - which breaks with decorators.
+In case #1 we'd have to rely on Python's `func_code.co_varnames` for introspection - which breaks with decorators.
 
-In the second case, Python would handle the validation - which would be a lot easier to implement. But if unexpected parameters get passed in that would cause an exception - something that could be fixed if wished by adding a @**kwargs@ argument to the method definition.
+In the second case, Python would handle the validation - which would be a lot easier to implement. But if unexpected parameters get passed in that would cause an exception - something that could be fixed if wished by adding a `**kwargs` argument to the method definition.
 
 ## See also ##
 

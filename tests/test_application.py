@@ -56,7 +56,7 @@ def test_app_wsgi():
     env = {'PATH_INFO': '/res1/theid.json', 'REQUEST_METHOD': 'GET',
         'wsgi.input': ''}
     start_response = mox.MockAnything()
-    start_response('200 OK', [('Content-Type', 'application/json')])
+    start_response('200 OK', [('Content-Type', 'application/json; charset=UTF-8')])
     mox.Replay(start_response)
     res = app(env, start_response)
     print res

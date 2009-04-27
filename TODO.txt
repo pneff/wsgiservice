@@ -1,5 +1,3 @@
-* Correctly implement handling of POST data. Should probably only split it up into parameters with multipart/form-data type.
-* Make sure charset is always defined to UTF-8 as the default is latin1
 * Allow providing of ETag for resource, correctly set it and use it for the different conditions.
 * Allow resource to define a last-modified header, correctly set and validate it
 * Make sure request headers are all handled in a case-insensitive manner.

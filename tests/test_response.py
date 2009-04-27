@@ -4,7 +4,7 @@ def test_init():
     env = { 'HTTP_ACCEPT': '*/*' }
     r = wsgiservice.Response({'foo': 'bar'}, env)
     print r._headers
-    assert r._headers['Content-Type'] == 'text/xml'
+    assert r._headers['Content-Type'] == 'text/xml; charset=UTF-8'
     assert r._headers['Vary'] == 'Accept'
     print str(r)
     assert str(r) == '<response><foo>bar</foo></response>'
@@ -19,9 +19,9 @@ def test_init_extension():
     env = { 'HTTP_ACCEPT': 'text/xml' }
     r = wsgiservice.Response({'foo': 'bar'}, env, extension='.json')
     print r._headers
-    assert r._headers['Content-Type'] == 'application/json'
+    assert r._headers['Content-Type'] == 'application/json; charset=UTF-8'
     assert not 'Vary' in r._headers
-    assert r.headers[0] == ('Content-Type', 'application/json')
+    assert r.headers[0] == ('Content-Type', 'application/json; charset=UTF-8')
     print str(r)
     assert str(r) == '{"foo": "bar"}'
 
@@ -75,11 +75,11 @@ def test_add_headers():
     print r._headers
     print r.headers
     assert len(r._headers) == 3
-    assert r._headers['Content-Type'] == 'text/xml'
+    assert r._headers['Content-Type'] == 'text/xml; charset=UTF-8'
     assert r._headers['X-Test'] == 'True'
     assert r._headers['Vary'] == 'Accept'
     assert r.headers[0] == ('Vary', 'Accept')
-    assert r.headers[1] == ('Content-Type', 'text/xml')
+    assert r.headers[1] == ('Content-Type', 'text/xml; charset=UTF-8')
     assert r.headers[2] == ('X-Test', 'True')
 
 def test_add_headers_vary():
@@ -87,5 +87,5 @@ def test_add_headers_vary():
     r = wsgiservice.Response('foo', env, headers={'Vary': 'Accept-Language'})
     print r._headers
     assert len(r._headers) == 2
-    assert r._headers['Content-Type'] == 'text/xml'
+    assert r._headers['Content-Type'] == 'text/xml; charset=UTF-8'
     assert r._headers['Vary'] == 'Accept-Language, Accept'

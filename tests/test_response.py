@@ -33,6 +33,15 @@ def test_convert_from_method():
     print str(r)
     assert str(r) == '<myxml/>'
 
+def test_convert_root_tag_none():
+    def GET():
+        return 'OK'
+    GET.text_xml_root = None
+    env = {}
+    r = wsgiservice.Response(GET(), env, method=GET)
+    print str(r)
+    assert str(r) == 'OK'
+
 def test_convert_root_tag_from_method():
     def GET():
         return ['foo']
@@ -41,6 +50,17 @@ def test_convert_root_tag_from_method():
     r = wsgiservice.Response(GET(), env, method=GET)
     print str(r)
     assert str(r) == '<output><0>foo</0></output>'
+
+def test_convert_root_tag_from_class():
+    class MyResource(object):
+        text_xml_root = 'foobar'
+        def GET():
+            return 'OK'
+    env = {}
+    r = wsgiservice.Response('OK', env, resource=MyResource(),
+        method=MyResource.GET)
+    print str(r)
+    assert str(r) == '<foobar>OK</foobar>'
 
 def test_status():
     env = {}

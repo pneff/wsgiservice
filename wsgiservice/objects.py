@@ -93,7 +93,12 @@ class Response(object):
             root_tag = 'response'
             if hasattr(self._method, 'text_xml_root'):
                 root_tag = self._method.text_xml_root
-            return '<' + root_tag + '>' + xml + '</' + root_tag + '>'
+            elif hasattr(self._resource, 'text_xml_root'):
+                root_tag = self._resource.text_xml_root
+            if root_tag is None:
+                return xml
+            else:
+                return '<' + root_tag + '>' + xml + '</' + root_tag + '>'
 
     def _to_xml(self, value):
         """Converts value to XML."""

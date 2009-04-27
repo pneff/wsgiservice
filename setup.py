@@ -8,5 +8,6 @@ setup(name='WsgiService',
       install_requires=[
         'mimeparse',
         'mox',
+        'decorator',
       ],
 )

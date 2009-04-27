@@ -1,6 +1,7 @@
 """Components responsible for building the WSGI application."""
 import re
 import wsgiservice
+import inspect
 from wsgiservice import Response
 from wsgiservice.objects import MiniResponse
 from wsgiservice.exceptions import ValidationException
@@ -33,11 +34,9 @@ class Application(object):
         instance = res()
         if hasattr(instance, method) and callable(getattr(instance, method)):
             method = getattr(instance, method)
-            if hasattr(method, '_names'):
-                method_params = getattr(method, '_names')[1:]
-            else:
-                code = method.func_code
-                method_params = code.co_varnames[1:code.co_argcount]
+            method_params, varargs, varkw, defaults = inspect.getargspec(method)
+            if method_params:
+                method_params.pop(0) # pop the self off
             params = []
             request = wsgiservice.Request(environ)
             for param in method_params:

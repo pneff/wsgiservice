@@ -1,7 +1,7 @@
-import functools
 import time
 from wsgiref.handlers import format_date_time
 from wsgiservice.objects import MiniResponse
+from decorator import decorator
 
 def mount(path):
     "Mounts a Resource at the given path."
@@ -20,24 +20,15 @@ def validate(name, re=None, doc=None):
         return cls_or_func
     return wrap
 
-
-import sys
 def expires(duration, currtime=time.gmtime):
-    "Sets the expirations header to the given duration."
-    def wrap(func):
-        if hasattr(func, '_names'):
-            names = getattr(func, '_names')
-        else:
-            names = func.func_code.co_varnames[:func.func_code.co_argcount]
-        @functools.wraps(func)
-        def decorated(*args, **kwargs):
-            res = func(*args, **kwargs)
-            if not isinstance(res, MiniResponse):
-                res = MiniResponse(res)
-            res.headers['Cache-Control'] = 'max-age=' + str(duration)
-            expires = format_date_time(time.mktime(currtime()) + duration)
-            res.headers['Expires'] = str(expires)
-            return res
-        decorated._names = names
-        return decorated
-    return wrap
+    @decorator
+    def _expires(func, *args, **kwargs):
+        "Sets the expirations header to the given duration."
+        res = func(*args, **kwargs)
+        if not isinstance(res, MiniResponse):
+            res = MiniResponse(res)
+        res.headers['Cache-Control'] = 'max-age=' + str(duration)
+        expires = format_date_time(time.mktime(currtime()) + duration)
+        res.headers['Expires'] = str(expires)
+        return res
+    return _expires

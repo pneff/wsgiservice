@@ -18,7 +18,7 @@ class Document(wsgiservice.Resource):
         are passed as key/value pairs in the POST data."""
         data.setdefault(id, {'id': id})
         for key in request.POST:
-            data[id][key] = request.POST[key].value
+            data[id][key] = request.POST[key]
         return {'id': id, 'saved': True}
 
     def DELETE(self, id):

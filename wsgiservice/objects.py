@@ -76,6 +76,11 @@ class Response(object):
         if headers:
             for key in headers:
                 self._headers[key] = headers[key]
+        if not extension in self._extension_map:
+            if 'Vary' in self._headers:
+                self._headers['Vary'] = self._headers['Vary'] + ', Accept'
+            else:
+                self._headers['Vary'] = 'Accept'
         self.status = self._status_map[status]
 
     @property

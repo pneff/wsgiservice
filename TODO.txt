@@ -1,4 +1,3 @@
-* Allow providing of ETag for resource, correctly set it and use it for the different conditions.
 * Allow resource to define a last-modified header, correctly set and validate it
 * Make sure request headers are all handled in a case-insensitive manner.
 * Send correct response codes for unknown vs. unimplemented method (405 vs. 501)

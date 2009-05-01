@@ -1,6 +1,7 @@
 """Objects to abstract the request and response handling."""
 import cgi
 import json
+import hashlib
 import re
 from xml.sax.saxutils import escape as xml_escape
 
@@ -91,12 +92,12 @@ class Response(object):
 
     def __str__(self):
         if self._body is None:
-            return ''
+            body = ''
         elif self.convert_type is None:
             # Assume body is already in the correct output format
-            return self._body
+            body = self._body
         elif self.convert_type == 'application/json':
-            return json.dumps(self._body)
+            body = json.dumps(self._body)
         elif self.convert_type == 'text/xml':
             xml = self._to_xml(self._body)
             root_tag = 'response'
@@ -105,9 +106,11 @@ class Response(object):
             elif hasattr(self._resource, 'text_xml_root'):
                 root_tag = self._resource.text_xml_root
             if root_tag is None:
-                return xml
+                body = xml
             else:
-                return '<' + root_tag + '>' + xml + '</' + root_tag + '>'
+                body = '<' + root_tag + '>' + xml + '</' + root_tag + '>'
+        self._headers['Content-MD5'] = hashlib.md5(body).hexdigest()
+        return body
 
     def _to_xml(self, value):
         """Converts value to XML."""

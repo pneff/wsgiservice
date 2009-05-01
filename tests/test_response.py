@@ -78,15 +78,21 @@ def test_bodyless_response():
 def test_add_headers():
     env = {}
     r = wsgiservice.Response('foo', env, headers={'X-Test': 'True'})
+    print str(r)
     print r._headers
     print r.headers
-    assert len(r._headers) == 3
+    assert len(r._headers) == 4
     assert r._headers['Content-Type'] == 'text/xml; charset=UTF-8'
     assert r._headers['X-Test'] == 'True'
     assert r._headers['Vary'] == 'Accept'
-    assert r.headers[0] == ('Vary', 'Accept')
-    assert r.headers[1] == ('Content-Type', 'text/xml; charset=UTF-8')
-    assert r.headers[2] == ('X-Test', 'True')
+    assert r._headers['Content-MD5'] == 'cc0938755caac1aad7ca8b96c3c1a9b8'
+    headers = list(r.headers)
+    headers.sort()
+    print headers
+    assert headers[0] == ('Content-MD5', 'cc0938755caac1aad7ca8b96c3c1a9b8')
+    assert headers[1] == ('Content-Type', 'text/xml; charset=UTF-8')
+    assert headers[2] == ('Vary', 'Accept')
+    assert headers[3] == ('X-Test', 'True')
 
 def test_add_headers_vary():
     env = {}

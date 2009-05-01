@@ -1,11 +1,9 @@
 * Think about how to handle 201, 200/204 methods.
-* Send 406 Not Acceptable when no Accept header is known? Or just default to XML?
 * Make downtime configurable with a file or something like that? Could then send out a 503 response with proper Retry-After header.
 * Allow easy pluggin in of a compression WSGI middleware
 * Convert to requested charset with Accept-Charset header
 * Return Allow header as response to PUT and for 405 (also 501?)
 * Implement Content-Location header
-* Content-MD5: Generate for content body, Validate incoming entity if Content-MD5 if set
 * Log From and Referer headers
 * On 201 created provide Location header
 * Abstract away error and status code handling

@@ -1,4 +1,5 @@
 """Components responsible for building the WSGI application."""
+import hashlib
 import re
 import wsgiservice
 import inspect
@@ -65,6 +66,12 @@ class Application(object):
         return None
 
     def _handle_conditions(self, instance, path_params, environ, request):
+        if 'HTTP_CONTENT_MD5' in environ:
+            environ['wsgi.input'].seek(0)
+            body_md5 = hashlib.md5(environ['wsgi.input'].read()).hexdigest()
+            if body_md5 != environ['HTTP_CONTENT_MD5']:
+                return {}, self._get_response_400(instance, environ,
+                    body='The Content-MD5 request header does not match the body.')
         etag = self._get_etag(instance, path_params, request)
         last_modified = self._get_last_modified(instance, path_params, request)
         headers = {'ETag': etag,
@@ -101,6 +108,10 @@ class Application(object):
 
     def _get_response_304(self, instance, environ, headers):
         return Response(None, environ, instance, status=304, headers=headers)
+
+    def _get_response_400(self, instance, environ, headers={}, body='Invalid request'):
+        return Response({'error': body}, environ, instance, status=400,
+            headers=headers)
 
     def _get_response_405(self, instance, environ, headers={}):
         headers['Allow'] = self._get_allowed_methods(instance)

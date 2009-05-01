@@ -51,7 +51,9 @@ def test_app_get_simple():
         'wsgi.input': StringIO.StringIO(body)}).environ
     res = app._handle_request(env)
     print res
+    print res._headers
     assert res.status == '200 OK'
+    assert res._headers['Content-MD5'] == '01475d016b32ca5a6f6396950d12194c'
     assert str(res) == "<response>GET was called with request &lt;class 'webob.Request'&gt;, id theid, foo None</response>"
 
 def test_app_head_revert_to_get_simple():
@@ -83,7 +85,8 @@ def test_app_wsgi():
     app = wsgiservice.get_app(globals())
     env = wsgiservice.Request.blank('/res1/theid.json').environ
     start_response = mox.MockAnything()
-    start_response('200 OK', [('Content-Type', 'application/json; charset=UTF-8')])
+    start_response('200 OK', [('Content-Type', 'application/json; charset=UTF-8'),
+        ('Content-MD5', '0a54c1e2c62e5a59b418bf462edb3ac9')])
     mox.Replay(start_response)
     res = app(env, start_response)
     print res
@@ -299,6 +302,29 @@ def test_if_unmodified_since_true():
     print res
     assert res._headers['ETag'] == '"myid"'
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
+    assert res.status == '200 OK'
+
+def test_verify_content_md5_invalid():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res1/theid', {
+        'HTTP_CONTENT_MD5': '89d5739baabbbe65be35cbe61c88e06d',
+        'wsgi.input': StringIO.StringIO('foobar')}).environ
+    res = app._handle_request(env)
+    print res
+    print res.status
+    print res._headers
+    assert 'ETag' not in res._headers
+    assert 'Last-Modified' not in res._headers
+    assert res.status == '400 Bad Request'
+    assert str(res) == '<response><error>The Content-MD5 request header does not match the body.</error></response>'
+
+def test_verify_content_md5_valid():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res1/theid', {
+        'HTTP_CONTENT_MD5': '89d5739baabbbe65be35cbe61c88e06d',
+        'wsgi.input': StringIO.StringIO('Foobar')}).environ
+    res = app._handle_request(env)
+    print res
     assert res.status == '200 OK'
 
 

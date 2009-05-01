@@ -66,7 +66,7 @@ class Response(object):
         if extension in self._extension_map:
             self.type = self._extension_map[extension]
         self.convert_type = self.type
-        if method and self.convert_type:
+        if body is not None and method and self.convert_type:
             to_type = re.sub('[^a-zA-Z_]', '_', self.convert_type)
             to_type_method = 'to_' + to_type
             if hasattr(method, to_type_method):
@@ -88,7 +88,9 @@ class Response(object):
         return self._headers.items()
 
     def __str__(self):
-        if self.convert_type is None:
+        if self._body is None:
+            return ''
+        elif self.convert_type is None:
             # Assume body is already in the correct output format
             return self._body
         elif self.convert_type == 'application/json':

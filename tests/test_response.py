@@ -69,6 +69,12 @@ def test_status():
     print r.status
     assert r.status == '405 Method Not Allowed'
 
+def test_bodyless_response():
+    env = {}
+    r = wsgiservice.Response(None, {})
+    print str(r)
+    assert str(r) == ''
+
 def test_add_headers():
     env = {}
     r = wsgiservice.Response('foo', env, headers={'X-Test': 'True'})

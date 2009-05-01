@@ -36,10 +36,13 @@ class Application(object):
         if not method:
             return self._get_response_405(instance, environ)
         request = wsgiservice.Request(environ)
+        etag = self._get_etag(instance, path_params, request)
         body, headers = self._call_dynamic_method(instance, method,
             path_params, request), None
         if isinstance(body, MiniResponse):
             body, headers = body.body, body.headers
+        if etag:
+            headers['ETag'] = etag
         return Response(body, environ, instance, method,
             headers =headers,
             extension=path_params.get('_extension', None))
@@ -56,6 +59,14 @@ class Application(object):
         return Response({'error': 'Invalid method on resource'}, environ,
             instance, status=405, headers={'Allow': ", ".join(methods)})
 
+    def _get_etag(self, instance, path_params, request):
+        if not hasattr(instance, 'get_etag'):
+            return None
+        retval = self._call_dynamic_method(instance, 'get_etag', path_params,
+            request)
+        if retval:
+            return '"' + retval.replace('"', '') + '"'
+
     def _call_dynamic_method(self, instance, method, path_params, request):
         method = getattr(instance, method)
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
@@ -68,6 +79,8 @@ class Application(object):
                 value = request
             elif param in path_params:
                 value = path_params[param]
+            elif param in request.GET:
+                value = request.GET[param]
             elif param in request.POST:
                 value = request.POST[param]
             self._validate_param(method, param, value)

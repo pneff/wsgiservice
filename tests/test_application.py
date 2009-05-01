@@ -128,12 +128,18 @@ def test_with_expires_calculations():
 
 def test_with_expires_calculations_double_wrapped():
     app = wsgiservice.get_app(globals())
-    env = {'PATH_INFO': '/res4', 'REQUEST_METHOD': 'POST',
-        'wsgi.input': StringIO.StringIO('')}
+    env = wsgiservice.Request.blank('/res4', {'REQUEST_METHOD': 'POST'}).environ
     res = app._handle_request(env)
     print res._headers
     assert res._headers['Cache-Control'] == 'max-age=139'
     assert res._headers['Expires'] == 'Mon, 20 Apr 2009 16:55:46 GMT'
+
+def test_etag_generate():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid').environ
+    res = app._handle_request(env)
+    print res._headers
+    assert res._headers['ETag'] == '"myid"'
 
 
 class Resource1(wsgiservice.Resource):
@@ -170,3 +176,8 @@ class Resource4(wsgiservice.Resource):
     @wsgiservice.expires(138, lambda: time.gmtime(1240250007))
     def POST(self, id):
         return "POST Called with id: {0}".format(id)
+
+    def get_etag(self, id):
+        if id:
+            return id[0] + '"' + id[1:]
+

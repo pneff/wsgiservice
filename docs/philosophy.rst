@@ -8,7 +8,7 @@ The primary guiding principle is that the services should be as easy and small t
 WsgiService is not intended to be frontend framework. Creating full-featured frontend applications with WsgiService is quite cumbersome.
 
 Goals
-=====
+-----
 
 * Abstract away error and status code handling
 * Make it easy to create machine readable output

@@ -15,6 +15,7 @@ Contents
    philosophy
    modules/wsgiservice
    modules/reference
+   todo
 
 
 Indices and tables

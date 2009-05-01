@@ -41,7 +41,7 @@ class Application(object):
             if not etag_match in request.if_match:
                 return self._get_response_412(etag, instance, environ)
             if etag_match in request.if_none_match:
-                if request.method == 'GET':
+                if request.method in ('GET', 'HEAD'):
                     return self._get_response_304(etag, instance, environ)
                 else:
                     return self._get_response_412(etag, instance, environ)

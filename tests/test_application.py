@@ -191,6 +191,16 @@ def test_etag_if_none_match_get_true():
     assert res._headers['ETag'] == '"myid"'
     assert res.status == '304 Not Modified'
 
+def test_etag_if_none_match_head_true():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_NONE_MATCH': '"myid"', 'REQUEST_METHOD': 'HEAD'}).environ
+    res = app._handle_request(env)
+    print res
+    assert str(res) == ''
+    assert res._headers['ETag'] == '"myid"'
+    assert res.status == '304 Not Modified'
+
 def test_etag_if_none_match_post_true():
     app = wsgiservice.get_app(globals())
     env = wsgiservice.Request.blank('/res4?id=myid',

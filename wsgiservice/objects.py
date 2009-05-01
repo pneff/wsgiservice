@@ -10,6 +10,30 @@ from webob import Request
 logger = logging.getLogger(__name__)
 
 class Response(object):
+    """Represents the response to be sent to the client. Handles content
+    negotiation and some header generation where possible.
+    
+    :param body: Body to output to the browser. Will be transformed to the
+                 ideal format based on content negotiation. Set to ``None``
+                 to avoid sending out a response body.
+    :type body: any valid Python object
+    :param environ: The WSGI environment dictionary.
+    :type environ: dict
+    :param resource: The resource which was used to generate this response if
+                     any.
+    :type resource: :class:`wsgiservice.Resource`
+    :param method: The method which was used to generate this respons if any.
+    :type method: method of :class:`wsgiservice.Resource`
+    :param headers: Any headers that are to be sent to the client.
+    :type headers: dict
+    :param status: Status code to send. The correct description will be added
+                   based on this code.
+    :type status: int
+    :param extension: The extension which was passed in from the routing
+                      engine. This is used for content negotiation to override
+                      any ``Accept`` request headers.
+    :type extension: str
+    """
     _status_map = {
         100: '100 Continue',
         101: '101 Switching Protocols',
@@ -95,6 +119,7 @@ class Response(object):
 
     @property
     def headers(self):
+        """Dictionary of all headers currently to be sent to the browser."""
         return self._headers.items()
 
     def __str__(self):
@@ -141,7 +166,8 @@ class Response(object):
 
 class MiniResponse(object):
     """A small wrapper to return body content and headers easily. Mostly
-    needed so that the decorators don't get too complex."""
+    needed so that the decorators don't get too complex.
+    """
     def __init__(self, body, headers=None):
         self.body = body
         self.headers = headers or {}

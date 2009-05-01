@@ -6,6 +6,9 @@ class Router(object):
     """Simple routing. Path parameters can be extracted with the syntax
     {keyword} where keyword is the path parameter. That parameter will then
     be passed on to the called request method.
+
+    :param resources: A list of :class:`wsgiservice.Resource` classes to be
+                      routed to.
     """
     def __init__(self, resources):
         self._routes = []

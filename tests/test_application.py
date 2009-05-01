@@ -33,6 +33,15 @@ def test_app_handle_method_not_allowed():
     assert str(res) == '<response><error>Invalid method on resource</error></response>'
     assert res._headers['Allow'] == 'POST, PUT'
 
+def test_app_handle_method_not_known():
+    app = wsgiservice.get_app(globals())
+    env = {'PATH_INFO': '/res2', 'REQUEST_METHOD': 'PATCH'}
+    res = app._handle_request(env)
+    print res.status
+    assert res.status == '501 Not Implemented'
+    assert str(res) == '<response><error>Unknown method</error></response>'
+    assert res._headers['Allow'] == 'POST, PUT'
+
 def test_app_get_simple():
     app = wsgiservice.get_app(globals())
     body = 'foo=42&baz=foobar'

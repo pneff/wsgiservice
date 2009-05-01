@@ -35,7 +35,11 @@ class Application(object):
         instance = res()
         method = self._resolve_method(instance, request.method)
         if not method:
-            return self._get_response_405(instance, environ)
+            if request.method in ('OPTIONS', 'GET', 'HEAD', 'POST', 'PUT',
+                                  'DELETE', 'TRACE', 'CONNECT'):
+                return self._get_response_405(instance, environ)
+            else:
+                return self._get_response_501(instance, environ)
         default_headers, response = self._handle_conditions(instance,
             path_params, environ, request)
         if response:
@@ -99,16 +103,18 @@ class Application(object):
         return Response(None, environ, instance, status=304, headers=headers)
 
     def _get_response_405(self, instance, environ, headers={}):
-        methods = [method for method in dir(instance)
-            if method.upper() == method
-            and callable(getattr(instance, method))]
-        headers['Allow'] = ", ".join(methods)
+        headers['Allow'] = self._get_allowed_methods(instance)
         return Response({'error': 'Invalid method on resource'}, environ,
             instance, status=405, headers=headers)
 
     def _get_response_412(self, instance, environ, headers):
         return Response({'error': 'Precondition failed.'}, environ,
             instance, status=412, headers=headers)
+
+    def _get_response_501(self, instance, environ, headers={}):
+        headers['Allow'] = self._get_allowed_methods(instance)
+        return Response({'error': 'Unknown method'}, environ,
+            instance, status=501, headers=headers)
 
     def _get_etag(self, instance, path_params, request):
         if not hasattr(instance, 'get_etag'):
@@ -123,6 +129,11 @@ class Application(object):
             return None
         return self._call_dynamic_method(instance, 'get_last_modified',
             path_params, request)
+
+    def _get_allowed_methods(self, instance):
+        return ", ".join([method for method in dir(instance)
+            if method.upper() == method
+            and callable(getattr(instance, method))])
 
     def _call_dynamic_method(self, instance, method, path_params, request):
         method = getattr(instance, method)

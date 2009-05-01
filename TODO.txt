@@ -1,6 +1,3 @@
-* Make sure request headers are all handled in a case-insensitive manner.
-* Send correct response codes for unknown vs. unimplemented method (405 vs. 501)
-* Implement HEAD method, defaulting to GET
 * Think about how to handle 201, 200/204 methods.
 * Send 406 Not Acceptable when no Accept header is known? Or just default to XML?
 * Make downtime configurable with a file or something like that? Could then send out a 503 response with proper Retry-After header.

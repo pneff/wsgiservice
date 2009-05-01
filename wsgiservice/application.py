@@ -2,6 +2,7 @@
 import re
 import wsgiservice
 import inspect
+import webob
 from wsgiservice import Response
 from wsgiservice.objects import MiniResponse
 from wsgiservice.exceptions import ValidationException
@@ -35,22 +36,19 @@ class Application(object):
         method = self._resolve_method(instance, request.method)
         if not method:
             return self._get_response_405(instance, environ)
-        etag = self._get_etag(instance, path_params, request)
-        if etag:
-            etag_match = etag.replace('"', '')
-            if not etag_match in request.if_match:
-                return self._get_response_412(etag, instance, environ)
-            if etag_match in request.if_none_match:
-                if request.method in ('GET', 'HEAD'):
-                    return self._get_response_304(etag, instance, environ)
-                else:
-                    return self._get_response_412(etag, instance, environ)
+        default_headers, response = self._handle_conditions(instance,
+            path_params, environ, request)
+        if response:
+            return response
         body, headers = self._call_dynamic_method(instance, method,
             path_params, request), None
         if isinstance(body, MiniResponse):
             body, headers = body.body, body.headers
-        if etag:
-            headers['ETag'] = etag
+        if not headers:
+            headers = {}
+        for key, value in default_headers.iteritems():
+            if value and key not in headers:
+                headers[key] = value
         return Response(body, environ, instance, method,
             headers =headers,
             extension=path_params.get('_extension', None))
@@ -62,23 +60,53 @@ class Application(object):
             return self._resolve_method(instance, 'GET')
         return None
 
-    def _get_response_304(self, etag, instance, environ):
-        headers = {}
-        if etag:
-            headers['ETag'] = etag
+    def _handle_conditions(self, instance, path_params, environ, request):
+        etag = self._get_etag(instance, path_params, request)
+        last_modified = self._get_last_modified(instance, path_params, request)
+        headers = {'ETag': etag,
+                   'Last-Modified': webob._serialize_date(last_modified)}
+        status = self._handle_condition_etag(request, etag)
+        if status == 0:
+            status = self._handle_condition_last_modified(request, last_modified)
+        if status > 0:
+            resfunc = getattr(self, '_get_response_' + str(status))
+            return headers, resfunc(instance, environ, headers)
+        return headers, None
+
+    def _handle_condition_etag(self, request, etag):
+        if not etag:
+            return 0
+        etag_match = etag.replace('"', '')
+        if not etag_match in request.if_match:
+            return 412
+        if etag_match in request.if_none_match:
+            if request.method in ('GET', 'HEAD'):
+                return 304
+            else:
+                return 412
+        return 0
+
+    def _handle_condition_last_modified(self, request, last_modified):
+        if not last_modified:
+            return
+        if request.if_modified_since and last_modified <= request.if_modified_since:
+            return 304
+        if request.if_unmodified_since and last_modified > request.if_unmodified_since:
+            return 412
+        return 0
+
+    def _get_response_304(self, instance, environ, headers):
         return Response(None, environ, instance, status=304, headers=headers)
 
-    def _get_response_405(self, instance, environ):
+    def _get_response_405(self, instance, environ, headers={}):
         methods = [method for method in dir(instance)
             if method.upper() == method
             and callable(getattr(instance, method))]
+        headers['Allow'] = ", ".join(methods)
         return Response({'error': 'Invalid method on resource'}, environ,
-            instance, status=405, headers={'Allow': ", ".join(methods)})
+            instance, status=405, headers=headers)
 
-    def _get_response_412(self, etag, instance, environ):
-        headers = {}
-        if etag:
-            headers['ETag'] = etag
+    def _get_response_412(self, instance, environ, headers):
         return Response({'error': 'Precondition failed.'}, environ,
             instance, status=412, headers=headers)
 
@@ -89,6 +117,12 @@ class Application(object):
             request)
         if retval:
             return '"' + retval.replace('"', '') + '"'
+
+    def _get_last_modified(self, instance, path_params, request):
+        if not hasattr(instance, 'get_last_modified'):
+            return None
+        return self._call_dynamic_method(instance, 'get_last_modified',
+            path_params, request)
 
     def _call_dynamic_method(self, instance, method, path_params, request):
         method = getattr(instance, method)

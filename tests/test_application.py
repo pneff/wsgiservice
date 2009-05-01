@@ -147,13 +147,13 @@ def test_with_expires_calculations_double_wrapped():
     assert res._headers['Cache-Control'] == 'max-age=139'
     assert res._headers['Expires'] == 'Mon, 20 Apr 2009 16:55:46 GMT'
 
+
 def test_etag_generate():
     app = wsgiservice.get_app(globals())
     env = wsgiservice.Request.blank('/res4?id=myid').environ
     res = app._handle_request(env)
     print res._headers
     assert res._headers['ETag'] == '"myid"'
-
 
 def test_etag_if_match_false():
     app = wsgiservice.get_app(globals())
@@ -220,6 +220,79 @@ def test_etag_if_none_match_false():
     assert res.status == '200 OK'
 
 
+def test_modified_generate():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid').environ
+    res = app._handle_request(env)
+    print res._headers
+    assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
+
+def test_if_modified_since_false():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_MODIFIED_SINCE': 'Fri, 01 May 2009 14:30:00 GMT'}).environ
+    res = app._handle_request(env)
+    print res
+    assert str(res) == ''
+    assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
+    assert res._headers['ETag'] == '"myid"'
+    assert res.status == '304 Not Modified'
+
+def test_if_modified_since_true():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_MODIFIED_SINCE': 'Fri, 01 May 2009 14:18:10 GMT'}).environ
+    res = app._handle_request(env)
+    print res
+    assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
+    assert res.status == '200 OK'
+
+def test_if_unmodified_since_false():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_UNMODIFIED_SINCE': 'Fri, 01 May 2009 12:30:00 GMT'}).environ
+    res = app._handle_request(env)
+    print res
+    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
+    assert res.status == '412 Precondition Failed'
+
+def test_if_unmodified_since_false_head():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_UNMODIFIED_SINCE': 'Thu, 30 Apr 2009 19:30:00 GMT',
+        'REQUEST_METHOD': 'HEAD'}).environ
+    res = app._handle_request(env)
+    print res
+    assert str(res) == ''
+    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
+    assert res.status == '412 Precondition Failed'
+
+def test_if_unmodified_since_false_post():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_UNMODIFIED_SINCE': 'Thu, 30 Apr 2009 19:30:00 GMT',
+        'REQUEST_METHOD': 'POST'}).environ
+    res = app._handle_request(env)
+    print res
+    print res.status
+    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
+    assert res.status == '412 Precondition Failed'
+
+def test_if_unmodified_since_true():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_UNMODIFIED_SINCE': 'Fri, 01 May 2009 14:30:00 GMT',
+        'REQUEST_METHOD': 'POST'}).environ
+    res = app._handle_request(env)
+    print res
+    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
+    assert res.status == '200 OK'
+
+
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'
     _validations = {'id': {'re': '[a-z]{5}'}}
@@ -259,3 +332,7 @@ class Resource4(wsgiservice.Resource):
         if id:
             return id[0] + '"' + id[1:]
 
+    def get_last_modified(self, id):
+        from webob import UTC
+        from datetime import datetime
+        return datetime(2009, 5, 1, 14, 30, tzinfo=UTC)

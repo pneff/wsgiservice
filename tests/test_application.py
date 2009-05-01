@@ -168,6 +168,34 @@ def test_etag_if_match_not_set():
     assert res._headers['ETag'] == '"myid"'
     assert res.status == '200 OK'
 
+def test_etag_if_none_match_get_true():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_NONE_MATCH': '"myid"'}).environ
+    res = app._handle_request(env)
+    print res
+    assert str(res) == ''
+    assert res._headers['ETag'] == '"myid"'
+    assert res.status == '304 Not Modified'
+
+def test_etag_if_none_match_post_true():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_NONE_MATCH': '"myid"', 'REQUEST_METHOD': 'POST'}).environ
+    res = app._handle_request(env)
+    print res
+    assert res._headers['ETag'] == '"myid"'
+    assert res.status == '412 Precondition Failed'
+
+def test_etag_if_none_match_false():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_NONE_MATCH': '"otherid"'}).environ
+    res = app._handle_request(env)
+    print res
+    assert res._headers['ETag'] == '"myid"'
+    assert res.status == '200 OK'
+
 
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'

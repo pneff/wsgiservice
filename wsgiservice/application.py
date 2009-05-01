@@ -41,6 +41,11 @@ class Application(object):
             etag_match = etag.replace('"', '')
             if not etag_match in request.if_match:
                 return self._get_response_412(etag, instance, environ)
+            if etag_match in request.if_none_match:
+                if request.method == 'GET':
+                    return self._get_response_304(etag, instance, environ)
+                else:
+                    return self._get_response_412(etag, instance, environ)
         body, headers = self._call_dynamic_method(instance, method,
             path_params, request), None
         if isinstance(body, MiniResponse):
@@ -55,6 +60,12 @@ class Application(object):
         if hasattr(instance, method) and callable(getattr(instance, method)):
             return method
         return None
+
+    def _get_response_304(self, etag, instance, environ):
+        headers = {}
+        if etag:
+            headers['ETag'] = etag
+        return Response(None, environ, instance, status=304, headers=headers)
 
     def _get_response_405(self, instance, environ):
         methods = [method for method in dir(instance)

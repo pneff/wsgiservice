@@ -142,7 +142,7 @@ def test_etag_generate():
     assert res._headers['ETag'] == '"myid"'
 
 
-def test_etag_if_match_true():
+def test_etag_if_match_false():
     app = wsgiservice.get_app(globals())
     env = wsgiservice.Request.blank('/res4?id=myid',
         {'HTTP_IF_MATCH': '"otherid"'}).environ
@@ -150,6 +150,23 @@ def test_etag_if_match_true():
     print res
     assert res._headers['ETag'] == '"myid"'
     assert res.status == '412 Precondition Failed'
+
+def test_etag_if_match_true():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_MATCH': '"myid"'}).environ
+    res = app._handle_request(env)
+    print res
+    assert res._headers['ETag'] == '"myid"'
+    assert res.status == '200 OK'
+
+def test_etag_if_match_not_set():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid').environ
+    res = app._handle_request(env)
+    print res
+    assert res._headers['ETag'] == '"myid"'
+    assert res.status == '200 OK'
 
 
 class Resource1(wsgiservice.Resource):

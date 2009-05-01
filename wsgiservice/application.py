@@ -37,8 +37,10 @@ class Application(object):
             return self._get_response_405(instance, environ)
         request = wsgiservice.Request(environ)
         etag = self._get_etag(instance, path_params, request)
-        if not etag in request.if_match:
-            return self._get_response_412(etag, instance, environ)
+        if etag:
+            etag_match = etag.replace('"', '')
+            if not etag_match in request.if_match:
+                return self._get_response_412(etag, instance, environ)
         body, headers = self._call_dynamic_method(instance, method,
             path_params, request), None
         if isinstance(body, MiniResponse):

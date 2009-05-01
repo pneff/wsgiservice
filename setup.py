@@ -9,5 +9,6 @@ setup(name='WsgiService',
         'mimeparse',
         'mox',
         'decorator',
+        'webob',
       ],
 )

@@ -131,10 +131,4 @@ class MiniResponse(object):
         self.headers = headers or {}
 
 
-class Request(object):
-    def __init__(self, environ):
-        self.POST = {}
-        post = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ,
-            keep_blank_values=1)
-        for key in post:
-            self.POST[key] = post[key].value
+from webob import Request

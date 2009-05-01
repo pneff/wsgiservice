@@ -35,33 +35,38 @@ def test_app_handle_method_not_allowed():
 
 def test_app_get_simple():
     app = wsgiservice.get_app(globals())
-    env = {'PATH_INFO': '/res1/theid', 'REQUEST_METHOD': 'GET',
-        'wsgi.input': StringIO.StringIO('foo=42&baz=foobar')}
+    body = 'foo=42&baz=foobar'
+    env = wsgiservice.Request.blank('/res1/theid', {
+        'CONTENT_LENGTH': str(len(body)),
+        'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+        'wsgi.input': StringIO.StringIO(body)}).environ
     res = app._handle_request(env)
     print res
     assert res.status == '200 OK'
-    assert str(res) == "<response>GET was called with request &lt;class 'wsgiservice.objects.Request'&gt;, id theid, foo None</response>"
+    assert str(res) == "<response>GET was called with request &lt;class 'webob.Request'&gt;, id theid, foo None</response>"
 
 def test_app_post_simple():
     app = wsgiservice.get_app(globals())
-    env = {'PATH_INFO': '/res1/theid', 'REQUEST_METHOD': 'POST',
-        'wsgi.input': StringIO.StringIO('foo=42&baz=foobar')}
+    body = 'foo=42&baz=foobar'
+    env = wsgiservice.Request.blank('/res1/theid', {
+        'REQUEST_METHOD': 'POST', 'CONTENT_LENGTH': str(len(body)),
+        'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+        'wsgi.input': StringIO.StringIO(body)}).environ
     res = app._handle_request(env)
     print res
     assert res.status == '200 OK'
-    assert str(res) == "<response>POST was called with request &lt;class 'wsgiservice.objects.Request'&gt;, id theid, foo 42</response>"
+    assert str(res) == "<response>POST was called with request &lt;class 'webob.Request'&gt;, id theid, foo 42</response>"
 
 def test_app_wsgi():
     app = wsgiservice.get_app(globals())
-    env = {'PATH_INFO': '/res1/theid.json', 'REQUEST_METHOD': 'GET',
-        'wsgi.input': ''}
+    env = wsgiservice.Request.blank('/res1/theid.json').environ
     start_response = mox.MockAnything()
     start_response('200 OK', [('Content-Type', 'application/json; charset=UTF-8')])
     mox.Replay(start_response)
     res = app(env, start_response)
     print res
     mox.Verify(start_response)
-    assert res == '"GET was called with request <class \'wsgiservice.objects.Request\'>, id theid, foo None"'
+    assert res == '"GET was called with request <class \'webob.Request\'>, id theid, foo None"'
 
 def test_validation_method():
     app = wsgiservice.get_app(globals())
@@ -108,16 +113,14 @@ def test_validation_with_re_mismatch_toolong():
 
 def test_with_expires():
     app = wsgiservice.get_app(globals())
-    env = {'PATH_INFO': '/res3', 'REQUEST_METHOD': 'GET',
-        'wsgi.input': StringIO.StringIO('')}
+    env = wsgiservice.Request.blank('/res3').environ
     res = app._handle_request(env)
     print res._headers
     assert res._headers['Cache-Control'] == 'max-age=138'
 
 def test_with_expires_calculations():
     app = wsgiservice.get_app(globals())
-    env = {'PATH_INFO': '/res4', 'REQUEST_METHOD': 'GET',
-        'wsgi.input': StringIO.StringIO('')}
+    env = wsgiservice.Request.blank('/res4').environ
     res = app._handle_request(env)
     print res._headers
     assert res._headers['Cache-Control'] == 'max-age=138'

@@ -37,6 +37,8 @@ class Application(object):
             return self._get_response_405(instance, environ)
         request = wsgiservice.Request(environ)
         etag = self._get_etag(instance, path_params, request)
+        if not etag in request.if_match:
+            return self._get_response_412(etag, instance, environ)
         body, headers = self._call_dynamic_method(instance, method,
             path_params, request), None
         if isinstance(body, MiniResponse):
@@ -58,6 +60,13 @@ class Application(object):
             and callable(getattr(instance, method))]
         return Response({'error': 'Invalid method on resource'}, environ,
             instance, status=405, headers={'Allow': ", ".join(methods)})
+
+    def _get_response_412(self, etag, instance, environ):
+        headers = {}
+        if etag:
+            headers['ETag'] = etag
+        return Response({'error': 'Precondition failed.'}, environ,
+            instance, status=412, headers=headers)
 
     def _get_etag(self, instance, path_params, request):
         if not hasattr(instance, 'get_etag'):

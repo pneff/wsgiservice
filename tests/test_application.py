@@ -142,6 +142,16 @@ def test_etag_generate():
     assert res._headers['ETag'] == '"myid"'
 
 
+def test_etag_if_match_true():
+    app = wsgiservice.get_app(globals())
+    env = wsgiservice.Request.blank('/res4?id=myid',
+        {'HTTP_IF_MATCH': '"otherid"'}).environ
+    res = app._handle_request(env)
+    print res
+    assert res._headers['ETag'] == '"myid"'
+    assert res.status == '412 Precondition Failed'
+
+
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'
     _validations = {'id': {'re': '[a-z]{5}'}}

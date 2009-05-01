@@ -1,9 +1,13 @@
 """Objects to abstract the request and response handling."""
 import cgi
-import json
 import hashlib
+import json
+import logging
 import re
 from xml.sax.saxutils import escape as xml_escape
+from webob import Request
+
+logger = logging.getLogger(__name__)
 
 class Response(object):
     _status_map = {
@@ -65,9 +69,12 @@ class Response(object):
         self._available_types = ['text/xml', 'application/json']
         if extension in self._extension_map:
             self.type = self._extension_map[extension]
+            logger.debug("Using response type %s based on extension %s",
+                self.type, extension)
         else:
             request = Request(environ)
             self.type = request.accept.first_match(self._available_types)
+            logger.debug("Using response type %s", self.type)
         self.convert_type = self.type
         if body is not None and method and self.convert_type:
             to_type = re.sub('[^a-zA-Z_]', '_', self.convert_type)
@@ -97,8 +104,10 @@ class Response(object):
             # Assume body is already in the correct output format
             body = self._body
         elif self.convert_type == 'application/json':
+            logger.debug("Converting body to application/json")
             body = json.dumps(self._body)
         elif self.convert_type == 'text/xml':
+            logger.debug("Converting body to text/xml")
             xml = self._to_xml(self._body)
             root_tag = 'response'
             if hasattr(self._method, 'text_xml_root'):
@@ -132,10 +141,7 @@ class Response(object):
 
 class MiniResponse(object):
     """A small wrapper to return body content and headers easily. Mostly
-    needed so that the decoratores don't get too complex."""
+    needed so that the decorators don't get too complex."""
     def __init__(self, body, headers=None):
         self.body = body
         self.headers = headers or {}
-
-
-from webob import Request

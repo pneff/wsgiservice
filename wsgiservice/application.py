@@ -1,12 +1,15 @@
 """Components responsible for building the WSGI application."""
 import hashlib
-import re
-import wsgiservice
 import inspect
+import logging
+import re
 import webob
+import wsgiservice
 from wsgiservice import Response
 from wsgiservice.objects import MiniResponse
 from wsgiservice.exceptions import ValidationException
+
+logger = logging.getLogger(__name__)
 
 class Application(object):
     """WSGI application wrapping a set of WsgiService resources."""
@@ -26,7 +29,7 @@ class Application(object):
         path = environ['PATH_INFO']
         parsed = self._urlmap(path)
         if not parsed:
-            return Response({'error': 'not found'}, environ, status=404)
+            return self._get_response_404(None, environ)
         else:
             path_params, res = parsed
             return self._call_resource(res, path_params, environ)
@@ -107,22 +110,32 @@ class Application(object):
         return 0
 
     def _get_response_304(self, instance, environ, headers):
+        logger.info("HTTP statuc 304: Not modified")
         return Response(None, environ, instance, status=304, headers=headers)
 
     def _get_response_400(self, instance, environ, headers={}, body='Invalid request'):
+        logger.error("HTTP error 400: %s", body)
         return Response({'error': body}, environ, instance, status=400,
             headers=headers)
 
+    def _get_response_404(self, instance, environ, headers={}):
+        logger.error("HTTP error 404: Not found")
+        return Response({'error': 'not found'}, environ, instance, status=404,
+            headers=headers)
+
     def _get_response_405(self, instance, environ, headers={}):
+        logger.error("HTTP error 405: Invalid method on resource")
         headers['Allow'] = self._get_allowed_methods(instance)
         return Response({'error': 'Invalid method on resource'}, environ,
             instance, status=405, headers=headers)
 
     def _get_response_412(self, instance, environ, headers):
-        return Response({'error': 'Precondition failed.'}, environ,
+        logger.error("HTTP error 412: Precondition failed")
+        return Response({'error': 'Precondition failed'}, environ,
             instance, status=412, headers=headers)
 
     def _get_response_501(self, instance, environ, headers={}):
+        logger.error("HTTP error 501: Unknown method")
         headers['Allow'] = self._get_allowed_methods(instance)
         return Response({'error': 'Unknown method'}, environ,
             instance, status=501, headers=headers)

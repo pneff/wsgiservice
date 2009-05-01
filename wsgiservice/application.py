@@ -32,35 +32,47 @@ class Application(object):
     def _call_resource(self, res, path_params, environ):
         method = environ['REQUEST_METHOD']
         instance = res()
+        method = self._resolve_method(instance, method)
+        if not method:
+            return self._get_response_405(instance, environ)
+        request = wsgiservice.Request(environ)
+        body, headers = self._call_dynamic_method(instance, method,
+            path_params, request), None
+        if isinstance(body, MiniResponse):
+            body, headers = body.body, body.headers
+        return Response(body, environ, instance, method,
+            headers =headers,
+            extension=path_params.get('_extension', None))
+
+    def _resolve_method(self, instance, method):
         if hasattr(instance, method) and callable(getattr(instance, method)):
-            method = getattr(instance, method)
-            method_params, varargs, varkw, defaults = inspect.getargspec(method)
-            if method_params:
-                method_params.pop(0) # pop the self off
-            params = []
-            request = wsgiservice.Request(environ)
-            for param in method_params:
-                value = None
-                if param == 'request':
-                    value = request
-                elif param in path_params:
-                    value = path_params[param]
-                elif param in request.POST:
-                    value = request.POST[param]
-                self._validate_param(method, param, value)
-                params.append(value)
-            body, headers = method(*params), None
-            if isinstance(body, MiniResponse):
-                body, headers = body.body, body.headers
-            return Response(body, environ, instance, method,
-                headers =headers,
-                extension=path_params.get('_extension', None))
-        else:
-            methods = [method for method in dir(instance)
-                if method.upper() == method
-                and callable(getattr(instance, method))]
-            return Response({'error': 'Invalid method on resource'}, environ,
-                instance, status=405, headers={'Allow': ", ".join(methods)})
+            return method
+        return None
+
+    def _get_response_405(self, instance, environ):
+        methods = [method for method in dir(instance)
+            if method.upper() == method
+            and callable(getattr(instance, method))]
+        return Response({'error': 'Invalid method on resource'}, environ,
+            instance, status=405, headers={'Allow': ", ".join(methods)})
+
+    def _call_dynamic_method(self, instance, method, path_params, request):
+        method = getattr(instance, method)
+        method_params, varargs, varkw, defaults = inspect.getargspec(method)
+        if method_params:
+            method_params.pop(0) # pop the self off
+        params = []
+        for param in method_params:
+            value = None
+            if param == 'request':
+                value = request
+            elif param in path_params:
+                value = path_params[param]
+            elif param in request.POST:
+                value = request.POST[param]
+            self._validate_param(method, param, value)
+            params.append(value)
+        return method(*params)
 
     def _validate_param(self, method, param, value):
         rules = None

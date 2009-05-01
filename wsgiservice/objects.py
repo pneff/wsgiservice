@@ -1,7 +1,6 @@
 """Objects to abstract the request and response handling."""
 import cgi
 import json
-import mimeparse
 import re
 from xml.sax.saxutils import escape as xml_escape
 
@@ -62,11 +61,12 @@ class Response(object):
             body = None
         self._body = body
         self._method = method
-        self._available_types = ['application/json', 'text/xml']
-        self.type = mimeparse.best_match(self._available_types,
-            environ.get('HTTP_ACCEPT', '*/*'))
+        self._available_types = ['text/xml', 'application/json']
         if extension in self._extension_map:
             self.type = self._extension_map[extension]
+        else:
+            request = Request(environ)
+            self.type = request.accept.first_match(self._available_types)
         self.convert_type = self.type
         if body is not None and method and self.convert_type:
             to_type = re.sub('[^a-zA-Z_]', '_', self.convert_type)

@@ -30,12 +30,11 @@ class Application(object):
             return self._call_resource(res, path_params, environ)
 
     def _call_resource(self, res, path_params, environ):
-        method = environ['REQUEST_METHOD']
+        request = wsgiservice.Request(environ)
         instance = res()
-        method = self._resolve_method(instance, method)
+        method = self._resolve_method(instance, request.method)
         if not method:
             return self._get_response_405(instance, environ)
-        request = wsgiservice.Request(environ)
         etag = self._get_etag(instance, path_params, request)
         if etag:
             etag_match = etag.replace('"', '')
@@ -59,6 +58,8 @@ class Application(object):
     def _resolve_method(self, instance, method):
         if hasattr(instance, method) and callable(getattr(instance, method)):
             return method
+        elif method == 'HEAD':
+            return self._resolve_method(instance, 'GET')
         return None
 
     def _get_response_304(self, etag, instance, environ):

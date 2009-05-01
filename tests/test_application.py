@@ -45,6 +45,19 @@ def test_app_get_simple():
     assert res.status == '200 OK'
     assert str(res) == "<response>GET was called with request &lt;class 'webob.Request'&gt;, id theid, foo None</response>"
 
+def test_app_head_revert_to_get_simple():
+    app = wsgiservice.get_app(globals())
+    body = 'foo=42&baz=foobar'
+    env = wsgiservice.Request.blank('/res1/theid', {
+        'REQUEST_METHOD': 'HEAD',
+        'CONTENT_LENGTH': str(len(body)),
+        'CONTENT_TYPE': 'application/x-www-form-urlencoded',
+        'wsgi.input': StringIO.StringIO(body)}).environ
+    res = app._handle_request(env)
+    print res
+    assert res.status == '200 OK'
+    assert str(res) == ''
+
 def test_app_post_simple():
     app = wsgiservice.get_app(globals())
     body = 'foo=42&baz=foobar'

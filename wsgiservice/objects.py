@@ -58,6 +58,8 @@ class Response(object):
             headers=None, status=200, extension=None):
         self._environ = environ
         self._resource = resource
+        if environ.get('REQUEST_METHOD', '') == 'HEAD':
+            body = None
         self._body = body
         self._method = method
         self._available_types = ['application/json', 'text/xml']

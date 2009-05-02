@@ -13,6 +13,7 @@ Contents
    :glob:
    
    philosophy
+   tutorial
    modules/wsgiservice
    modules/reference
    todo

@@ -127,12 +127,12 @@ class Resource(object):
         if self.response.etag:
             etag = self.response.etag.replace('"', '')
             if not etag in self.request.if_match:
-                raise_412(self)
+                raise_412(self, 'If-Match request header does not the resource ETag.')
             if etag in self.request.if_none_match:
                 if self.request.method in ('GET', 'HEAD'):
                     raise_304(self)
                 else:
-                    raise_412(self)
+                    raise_412(self, 'If-None-Match request header matches resource ETag.')
     
     def assert_condition_last_modified(self):
         """If the resource has a last modified date (see
@@ -146,7 +146,7 @@ class Resource(object):
             if rq.if_modified_since and rs.last_modified <= rq.if_modified_since:
                 raise_304(self)
             if rq.if_unmodified_since and rs.last_modified > rq.if_unmodified_since:
-                raise_412(self)
+                raise_412(self, 'Resource is newer than the If-Unmodified-Since request header.')
     
     def get_etag(self):
         """Returns a string to be used as the ETag for this resource. Used to

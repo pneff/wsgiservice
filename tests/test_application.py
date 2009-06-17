@@ -36,12 +36,30 @@ def test_app_handle_method_not_allowed():
 
 def test_app_handle_method_not_known():
     app = wsgiservice.get_app(globals())
-    req = req = Request.blank('/res2', {'REQUEST_METHOD': 'PATCH'})
+    req = Request.blank('/res2', {'REQUEST_METHOD': 'PATCH'})
     res = app._handle_request(req)
     print res
     assert res.status == '501 Not Implemented'
     assert res.body == ''
     assert res._headers['Allow'] == 'POST, PUT'
+
+def test_app_handle_response_201_abs():
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res2', {'REQUEST_METHOD': 'POST'})
+    res = app._handle_request(req)
+    print res
+    assert res.status == '201 Created'
+    assert res.body == ''
+    assert res.location == 'http://localhost/res2/test'
+
+def test_app_handle_response_201_rel():
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res2', {'REQUEST_METHOD': 'PUT'})
+    res = app._handle_request(req)
+    print res
+    assert res.status == '201 Created'
+    assert res.body == ''
+    assert res.location == 'http://localhost/res2/foo'
 
 def test_app_get_simple():
     app = wsgiservice.get_app(globals())
@@ -336,9 +354,9 @@ class Resource1(wsgiservice.Resource):
 class Resource2(wsgiservice.Resource):
     _path = '/res2'
     def POST(self):
-        pass
+        wsgiservice.raise_201(self, '/res2/test')
     def PUT(self):
-        pass
+        wsgiservice.raise_201(self, 'foo')
 
 class Resource3(wsgiservice.Resource):
     _path = '/res3'

@@ -1,9 +1,30 @@
 """Helper methods to raise responses for the various HTTP status codes."""
+from urlparse import urljoin
 
 class ResponseException(Exception):
-    """Wraps a weob.Response object to be thrown as an exception."""
+    """Wraps a :class:`webob.Response` object to be thrown as an exception."""
     def __init__(self, response):
         self.response = response
+
+def raise_201(instance, location):
+    """Abort the current request with a 201 (Created) response code. Sets the
+    Location header correctly. If the location does not start with a slash,
+    the path of the current request is prepended.
+    """
+    if not location.startswith('/'):
+        location = urljoin(instance.request.path.rstrip('/') + '/', location)
+    instance.response.location = location
+    instance.response.status = 201
+    raise ResponseException(instance.response)
+
+def raise_204(instance):
+    """Abort the current request with a 204 (No Content) response code. Clears
+    out the body of the response.
+    """
+    instance.response.status = 204
+    instance.response.body = ''
+    instance.response.body_raw = None
+    raise ResponseException(instance.response)
 
 def raise_304(instance):
     """Abort the current request with a 304 (Not Modified) response code."""

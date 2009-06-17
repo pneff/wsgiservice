@@ -12,7 +12,6 @@ class Application(object):
     :param resources: A list of :class:`wsgiservice.Resource` classes to be
                       served by this application.
 
-    .. todo:: Think about how to handle 201, 200/204 methods.
     .. todo:: Make downtime configurable with a file or something like that?
        Could then send out a 503 response with proper Retry-After header.
     .. todo:: Allow easy pluggin in of a compression WSGI middleware
@@ -45,7 +44,7 @@ class Application(object):
     def _handle_request(self, request):
         """Finds the resource to which a request maps and then calls it.
         Instantiates and returns a :class:`webob.Response` object."""
-        response = webob.Response()
+        response = webob.Response(request=request)
         path = request.path_info
         parsed = self._urlmap(path)
         if not parsed:

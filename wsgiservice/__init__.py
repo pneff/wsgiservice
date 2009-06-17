@@ -7,6 +7,7 @@ from wsgiservice.decorators import mount, validate, expires
 from wsgiservice.objects import Response
 from wsgiservice.application import get_app
 from wsgiservice.resource import Resource
+from wsgiservice.status import *
 
 class duration(object):
     def __getattr__(self, key):

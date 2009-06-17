@@ -5,9 +5,8 @@ import logging
 import re
 import webob
 import wsgiservice
-from wsgiservice import Response
-from wsgiservice.objects import MiniResponse
 from wsgiservice.exceptions import ValidationException
+from wsgiservice.status import *
 
 logger = logging.getLogger(__name__)
 
@@ -39,164 +38,161 @@ class Application(object):
     def __init__(self, resources):
         self._resources = resources
         self._urlmap = wsgiservice.routing.Router(resources)
-
+    
     def __call__(self, environ, start_response):
         """WSGI entry point. Serve the best matching resource for the current
         request.
         """
-        # Find the correct resource
-        res = self._handle_request(environ)
-        if isinstance(res, Response):
-            b = str(res)
-            start_response(res.status, res.headers)
-            return b
-
-    def _handle_request(self, environ):
-        path = environ['PATH_INFO']
+        request = webob.Request(environ)
+        response = self._handle_request(request)
+        return response(environ, start_response)
+    
+    def _handle_request(self, request):
+        """Finds the resource to which a request maps and then calls it.
+        Instantiates and returns a :class:`webob.Response` object."""
+        response = webob.Response()
+        path = request.path_info
         parsed = self._urlmap(path)
         if not parsed:
-            return self._get_response_404(None, environ)
-        else:
-            path_params, res = parsed
-            return self._call_resource(res, path_params, environ)
-
-    def _call_resource(self, res, path_params, environ):
-        request = webob.Request(environ)
-        instance = res()
-        method = self._resolve_method(instance, request.method)
-        if not method:
-            if request.method in ('OPTIONS', 'GET', 'HEAD', 'POST', 'PUT',
-                                  'DELETE', 'TRACE', 'CONNECT'):
-                return self._get_response_405(instance, environ)
-            else:
-                return self._get_response_501(instance, environ)
-        default_headers, response = self._handle_conditions(instance,
-            path_params, environ, request)
-        if response:
+            response.status = 404
             return response
-        body, headers = self._call_dynamic_method(instance, method,
-            path_params, request), None
-        if isinstance(body, MiniResponse):
-            body, headers = body.body, body.headers
-        if not headers:
-            headers = {}
-        for key, value in default_headers.iteritems():
-            if value and key not in headers:
-                headers[key] = value
-        return Response(body, environ, instance, method,
-            headers =headers,
-            extension=path_params.get('_extension', None))
-
+        path_params, resource = parsed
+        response = self._call_resource(resource, path_params, request, response)
+        if request.method == 'HEAD':
+            response.body = ''
+        return response
+    
+    def _call_resource(self, resource, path_params, request, response):
+        """Executes the request on the given resource. Resolves the method
+        name to a Python methods, checks all preconditions and it everything
+        is okay, actually calls the Python method.
+        """
+        instance = resource(request, response, path_params)
+        method = None
+        try:
+            method = self._resolve_method(instance, instance.request.method)
+            self._handle_conditions(instance)
+            self._call_method(instance, method)
+        except ResponseException, e:
+            # a response was raised, catch it
+            instance.response = e.response
+        self._convert_response(instance, method)
+        return response
+    
     def _resolve_method(self, instance, method):
+        """Tries to find a Python method on the given instance which can be
+        used for the given HTTP method. Raises a HTTP exception if no method
+        exists.
+        """
         if hasattr(instance, method) and callable(getattr(instance, method)):
             return method
         elif method == 'HEAD':
             return self._resolve_method(instance, 'GET')
-        return None
-
-    def _handle_conditions(self, instance, path_params, environ, request):
-        if 'HTTP_CONTENT_MD5' in environ:
-            environ['wsgi.input'].seek(0)
-            body_md5 = hashlib.md5(environ['wsgi.input'].read()).hexdigest()
-            if body_md5 != environ['HTTP_CONTENT_MD5']:
-                return {}, self._get_response_400(instance, environ,
-                    body='The Content-MD5 request header does not match the body.')
-        etag = self._get_etag(instance, path_params, request)
-        last_modified = self._get_last_modified(instance, path_params, request)
-        headers = {'ETag': etag,
-                   'Last-Modified': webob._serialize_date(last_modified)}
-        status = self._handle_condition_etag(request, etag)
-        if status == 0:
-            status = self._handle_condition_last_modified(request, last_modified)
-        if status > 0:
-            resfunc = getattr(self, '_get_response_' + str(status))
-            return headers, resfunc(instance, environ, headers)
-        return headers, None
-
-    def _handle_condition_etag(self, request, etag):
-        if not etag:
-            return 0
-        etag_match = etag.replace('"', '')
-        if not etag_match in request.if_match:
-            return 412
-        if etag_match in request.if_none_match:
-            if request.method in ('GET', 'HEAD'):
-                return 304
+        # Error: did not find any method, raise a 405 or 501 exception
+        elif instance.request.method in ('OPTIONS', 'GET', 'HEAD', 'POST', 'PUT',
+                              'DELETE', 'TRACE', 'CONNECT'):
+            # Known HTTP methods => 405 Method Not Allowed
+            raise_405(instance)
+        else:
+            # Unknown HTTP methods => 501 Not Implemented
+            raise_501(instance)
+    
+    def _handle_conditions(self, instance):
+        """Handles various HTTP conditions and can raise HTTP exceptions to
+        abort the request.
+        
+            - Content-MD5 request header must match the MD5 hash of the full
+              input.
+        """
+        if 'Content-MD5' in instance.request.headers:
+            body_md5 = hashlib.md5(instance.request.body_file.read()).hexdigest()
+            if body_md5 != instance.request.headers['Content-MD5']:
+                raise_400(instance, msg='The Content-MD5 request header does not match the body.')
+        instance.response.etag = self._get_etag(instance)
+        instance.response.last_modified = self._get_last_modified(instance)
+        self._handle_condition_etag(instance)
+        self._handle_condition_last_modified(instance)
+    
+    def _handle_condition_etag(self, instance):
+        if instance.response.etag:
+            etag = instance.response.etag.replace('"', '')
+            if not etag in instance.request.if_match:
+                raise_412(instance)
+            if etag in instance.request.if_none_match:
+                if instance.request.method in ('GET', 'HEAD'):
+                    raise_304(instance)
+                else:
+                    raise_412(instance)
+    
+    def _handle_condition_last_modified(self, instance):
+        rq = instance.request
+        rs = instance.response
+        if rs.last_modified:
+            if rq.if_modified_since and rs.last_modified <= rq.if_modified_since:
+                raise_304(instance)
+            if rq.if_unmodified_since and rs.last_modified > rq.if_unmodified_since:
+                raise_412(instance)
+    
+    def _call_method(self, instance, method):
+        instance.response.body_raw = self._call_dynamic_method(instance, method)
+    
+    def _convert_response(self, instance, method):
+        """Finish filling the webob.Response object so it's ready to be
+        served to the client. This includes converting the body_raw property
+        to the content type requested by the user if necessary.
+        """
+        rs = instance.response
+        rq = instance.request
+        extension_map = { '.xml': 'text/xml', '.json': 'application/json'}
+        available_types = ['text/xml', 'application/json']
+        extension = instance.path_params.get('_extension')
+        if extension in extension_map:
+            out_type = extension_map[extension]
+        else:
+            out_type = rq.accept.first_match(available_types)
+        if hasattr(rs, 'body_raw'):
+            if rs.body_raw is not None:
+                to_type = re.sub('[^a-zA-Z_]', '_', out_type)
+                to_type_method = 'to_' + to_type
+                if hasattr(instance, to_type_method):
+                    getattr(instance, to_type_method)(rs.body_raw)
+            rs.headers['Content-Type'] = out_type + '; charset=UTF-8'
+            del rs.body_raw
+        if extension in extension_map:
+            # Used the Accept headers to very response
+            if rs.vary is None:
+                rs.vary = ['Accept']
             else:
-                return 412
-        return 0
-
-    def _handle_condition_last_modified(self, request, last_modified):
-        if not last_modified:
-            return
-        if request.if_modified_since and last_modified <= request.if_modified_since:
-            return 304
-        if request.if_unmodified_since and last_modified > request.if_unmodified_since:
-            return 412
-        return 0
-
-    def _get_response_304(self, instance, environ, headers):
-        logger.info("HTTP statuc 304: Not modified")
-        return Response(None, environ, instance, status=304, headers=headers)
-
-    def _get_response_400(self, instance, environ, headers={}, body='Invalid request'):
-        logger.error("HTTP error 400: %s", body)
-        return Response({'error': body}, environ, instance, status=400,
-            headers=headers)
-
-    def _get_response_404(self, instance, environ, headers={}):
-        logger.error("HTTP error 404: Not found")
-        return Response({'error': 'not found'}, environ, instance, status=404,
-            headers=headers)
-
-    def _get_response_405(self, instance, environ, headers={}):
-        logger.error("HTTP error 405: Invalid method on resource")
-        headers['Allow'] = self._get_allowed_methods(instance)
-        return Response({'error': 'Invalid method on resource'}, environ,
-            instance, status=405, headers=headers)
-
-    def _get_response_412(self, instance, environ, headers):
-        logger.error("HTTP error 412: Precondition failed")
-        return Response({'error': 'Precondition failed'}, environ,
-            instance, status=412, headers=headers)
-
-    def _get_response_501(self, instance, environ, headers={}):
-        logger.error("HTTP error 501: Unknown method")
-        headers['Allow'] = self._get_allowed_methods(instance)
-        return Response({'error': 'Unknown method'}, environ,
-            instance, status=501, headers=headers)
-
-    def _get_etag(self, instance, path_params, request):
-        if not hasattr(instance, 'get_etag'):
-            return None
-        retval = self._call_dynamic_method(instance, 'get_etag', path_params,
-            request)
+                rs.vary.append('Accept')
+        rs.content_md5 = hashlib.md5(rs.body).hexdigest()
+    
+    def _get_etag(self, instance):
+        retval = self._call_dynamic_method(instance, 'get_etag')
         if retval:
             return '"' + retval.replace('"', '') + '"'
-
-    def _get_last_modified(self, instance, path_params, request):
-        if not hasattr(instance, 'get_last_modified'):
-            return None
-        return self._call_dynamic_method(instance, 'get_last_modified',
-            path_params, request)
-
-    def _get_allowed_methods(self, instance):
-        return ", ".join([method for method in dir(instance)
-            if method.upper() == method
-            and callable(getattr(instance, method))])
-
-    def _call_dynamic_method(self, instance, method, path_params, request):
+    
+    def _get_last_modified(self, instance):
+        return self._call_dynamic_method(instance, 'get_last_modified')
+    
+    def _call_dynamic_method(self, instance, method):
+        """Call an instance method replacing all the parameter names. The
+        parameters are filled in from the following locations (in that order
+        of precedence):
+            1. Path parameters from routing
+            2. GET parameters
+            3. POST parameters
+        The value of the method is then returned.
+        """
         method = getattr(instance, method)
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
         if method_params:
             method_params.pop(0) # pop the self off
         params = []
+        request = instance.request
         for param in method_params:
             value = None
-            if param == 'request':
-                value = request
-            elif param in path_params:
-                value = path_params[param]
+            if param in instance.path_params:
+                value = instance.path_params[param]
             elif param in request.GET:
                 value = request.GET[param]
             elif param in request.POST:
@@ -204,8 +200,13 @@ class Application(object):
             self._validate_param(method, param, value)
             params.append(value)
         return method(*params)
-
+    
     def _validate_param(self, method, param, value):
+        """Validates the parameter according to the configurations in the
+        _validations dictionary of either the method or the instance. This
+        dictionaries are written by the decorator
+        :func:`wsgiservice.decorators.validate`.
+        """
         rules = None
         if hasattr(method, '_validations') and param in method._validations:
             rules = method._validations[param]
@@ -218,6 +219,7 @@ class Application(object):
         elif 're' in rules and rules['re']:
             if not re.search('^' + rules['re'] + '$', value):
                 raise ValidationException("{0} value {1} does not validate.".format(param, value))
+    
 
 def get_app(defs):
     """Small wrapper function to returns an instance of :class:`Application`

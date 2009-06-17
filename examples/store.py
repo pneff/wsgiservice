@@ -9,9 +9,12 @@ data = {}
 
 @wsgiservice.mount('/{id}')
 class Document(wsgiservice.Resource):
-    def GET(self, id):
+    def GET(self, request, response, id):
         "Return the document indicated by the ID."
-        return data[id]
+        try:
+            return data[id]
+        except KeyError:
+            wsgiservice.raise_404(request, self, response)
 
     def PUT(self, request, id):
         """Overwrite or create the document indicated by the ID. Parameters

@@ -1,6 +1,5 @@
 import time
 from wsgiref.handlers import format_date_time
-from wsgiservice.objects import MiniResponse
 from decorator import decorator
 
 def mount(path):
@@ -39,7 +38,7 @@ def validate(name, re=None, doc=None):
         return cls_or_func
     return wrap
 
-def expires(duration, currtime=time.gmtime):
+def expires(duration, currtime=time.time):
     """Decorator. Apply on a :class:`wsgiservice.Resource` method to set the
     max-age cache control parameter to the given duration. Also calculates
     the correct ``Expires`` response header.
@@ -53,11 +52,7 @@ def expires(duration, currtime=time.gmtime):
     @decorator
     def _expires(func, *args, **kwargs):
         "Sets the expirations header to the given duration."
-        res = func(*args, **kwargs)
-        if not isinstance(res, MiniResponse):
-            res = MiniResponse(res)
-        res.headers['Cache-Control'] = 'max-age=' + str(duration)
-        expires = format_date_time(time.mktime(currtime()) + duration)
-        res.headers['Expires'] = str(expires)
-        return res
+        args[0].response.cache_control.max_age = duration
+        args[0].response.expires = currtime() + duration
+        return func(*args, **kwargs)
     return _expires

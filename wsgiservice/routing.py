@@ -13,9 +13,9 @@ class Router(object):
     def __init__(self, resources):
         self._routes = []
         search_vars = re.compile(r'\{(\w+)\}').finditer
-        for res in resources:
+        for resource in resources:
             # Compile regular expression for each path
-            path, regexp, prev_pos = res._path, '^', 0
+            path, regexp, prev_pos = resource._path, '^', 0
             for match in search_vars(path):
                 regexp += re.escape(path[prev_pos:match.start()])
                 # .+? - match any character but non-greedy
@@ -25,10 +25,10 @@ class Router(object):
             # Allow an extension to overwrite the mime type
             extensions = "|".join(wsgiservice.Response._extension_map.keys())
             regexp += '(?P<_extension>' + extensions + ')?$'
-            self._routes.append((re.compile(regexp).match, res))
+            self._routes.append((re.compile(regexp).match, resource))
 
     def __call__(self, path):
-        for match, res in self._routes:
+        for match, resource in self._routes:
             retval = match(path)
             if retval:
-                return (retval.groupdict(), res)
+                return (retval.groupdict(), resource)

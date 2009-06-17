@@ -1,6 +1,7 @@
 import mox
 import StringIO
 import time
+from datetime import timedelta
 from webob import Request
 import wsgiservice
 import wsgiservice.application
@@ -165,7 +166,7 @@ def test_with_expires():
     res = app._handle_request(req)
     print str(res)
     print res._headers
-    assert res._headers['Cache-Control'] == 'max-age=138'
+    assert res._headers['Cache-Control'] == 'max-age=86400'
 
 def test_with_expires_calculations():
     app = wsgiservice.get_app(globals())
@@ -398,7 +399,7 @@ class Resource2(wsgiservice.Resource):
 
 class Resource3(wsgiservice.Resource):
     _path = '/res3'
-    @wsgiservice.expires(138)
+    @wsgiservice.expires(timedelta(days=1))
     def GET(self, id):
         return "Called with id: {0}".format(id)
 

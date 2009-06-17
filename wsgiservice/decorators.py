@@ -1,6 +1,8 @@
 import time
 from wsgiref.handlers import format_date_time
 from decorator import decorator
+from datetime import timedelta
+from webob import timedelta_to_seconds
 
 def mount(path):
     """Decorator. Apply on a :class:`wsgiservice.Resource` to mount it at the
@@ -49,6 +51,8 @@ def expires(duration, currtime=time.time):
                      used for testing and not required in production code.
     :type currtime: Function returning a :mod:`time.struct_time`
     """
+    if isinstance(duration, timedelta):
+        duration = timedelta_to_seconds(duration)
     @decorator
     def _expires(func, *args, **kwargs):
         "Sets the expirations header to the given duration."

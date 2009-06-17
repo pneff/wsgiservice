@@ -8,9 +8,3 @@ from wsgiservice.objects import Response
 from wsgiservice.application import get_app
 from wsgiservice.resource import Resource
 from wsgiservice.status import *
-
-class duration(object):
-    def __getattr__(self, key):
-        print "duration: {0}".format(key)
-        return key
-duration = duration()

@@ -9,19 +9,19 @@ data = {}
 
 @wsgiservice.mount('/{id}')
 class Document(wsgiservice.Resource):
-    def GET(self, request, response, id):
+    def GET(self, id):
         "Return the document indicated by the ID."
         try:
             return data[id]
         except KeyError:
-            wsgiservice.raise_404(request, self, response)
+            wsgiservice.raise_404(self)
 
-    def PUT(self, request, id):
+    def PUT(self, id):
         """Overwrite or create the document indicated by the ID. Parameters
         are passed as key/value pairs in the POST data."""
         data.setdefault(id, {'id': id})
-        for key in request.POST:
-            data[id][key] = request.POST[key]
+        for key in self.request.POST:
+            data[id][key] = self.request.POST[key]
         return {'id': id, 'saved': True}
 
     def DELETE(self, id):
@@ -30,12 +30,12 @@ class Document(wsgiservice.Resource):
 
 @wsgiservice.mount('/')
 class Documents(wsgiservice.Resource):
-    def POST(self, request):
+    def POST(self):
         """Create a new document, assigning a unique ID. Parameters are
         passed in as key/value pairs in the POST data."""
         id = str(uuid.uuid4())
-        res = Document()
-        return res.PUT(request, id)
+        res = Document(self.request, self.response, self.path_params)
+        return res.PUT(id)
 
 app = wsgiservice.get_app(globals())
 

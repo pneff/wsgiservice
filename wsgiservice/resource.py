@@ -57,6 +57,8 @@ class Resource(object):
         except ResponseException, e:
             # a response was raised, catch it
             self.response = e.response
+        except Exception, e:
+            self.handle_exception(e)
         self.convert_response()
         return self.response
     
@@ -301,3 +303,12 @@ class Resource(object):
             retval.append(xml_escape(str(value)))
         return "".join(retval)
     
+
+    def handle_exception(self, e):
+        """Handles the given exception. By default it will log it, set the
+        response code to 500 and output the exception message as an error
+        message.
+        """
+        logger.exception("An exception occured while handling the request.")
+        self.response.body_raw = {'error': str(e)}
+        self.response.status = 500

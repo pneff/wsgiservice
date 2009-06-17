@@ -10,12 +10,13 @@ def test_getapp():
     app = wsgiservice.get_app(globals())
     print app
     assert isinstance(app, wsgiservice.application.Application)
-    assert len(app._resources) == 4
-    resources = (Resource1, Resource2, Resource3, Resource4)
+    assert len(app._resources) == 5
+    resources = (Resource1, Resource2, Resource3, Resource4, Resource5)
     assert app._resources[0] in resources
     assert app._resources[1] in resources
     assert app._resources[2] in resources
     assert app._resources[3] in resources
+    assert app._resources[4] in resources
 
 def test_app_handle_404():
     app = wsgiservice.get_app(globals())
@@ -362,6 +363,22 @@ def test_verify_content_md5_valid():
     print res
     assert res.status == '200 OK'
 
+def test_exception_json():
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res5?throw=1', { 'HTTP_ACCEPT': 'application/json' })
+    res = app._handle_request(req)
+    print res
+    assert res.status == '500 Internal Server Error'
+    assert res.body == '{"error": "Some random exception."}'
+
+def test_exception_xml():
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res5?throw=1')
+    res = app._handle_request(req)
+    print res
+    assert res.status == '500 Internal Server Error'
+    assert res.body == '<response><error>Some random exception.</error></response>'
+
 
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'
@@ -404,3 +421,11 @@ class Resource4(wsgiservice.Resource):
         from webob import UTC
         from datetime import datetime
         return datetime(2009, 5, 1, 14, 30, tzinfo=UTC)
+
+class Resource5(wsgiservice.Resource):
+    _path = '/res5'
+    def GET(self, throw):
+        if throw == '1':
+            raise Exception("Some random exception.")
+        else:
+            return 'Throwing nothing'

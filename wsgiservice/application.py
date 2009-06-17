@@ -24,7 +24,6 @@ class Application(object):
     .. todo:: Make downtime configurable with a file or something like that?
        Could then send out a 503 response with proper Retry-After header.
     .. todo:: Convert to requested charset with Accept-Charset header
-    .. todo:: Abstract away error and status code handling
     .. todo:: Easy deployment using good configuration file handling
     .. todo:: Create usable REST API documentation from source
     """

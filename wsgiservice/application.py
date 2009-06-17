@@ -14,7 +14,6 @@ class Application(object):
 
     .. todo:: Make downtime configurable with a file or something like that?
        Could then send out a 503 response with proper Retry-After header.
-    .. todo:: Allow easy plugging in of a compression WSGI middleware
     .. todo:: Convert to requested charset with Accept-Charset header
     .. todo:: Return Allow header as response to PUT and for 405 (also 501?)
     .. todo:: Log From and Referer headers

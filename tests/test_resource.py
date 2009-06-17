@@ -26,3 +26,11 @@ def test_validate_method():
     assert User.PUT.__name__ == 'PUT'
     assert User.PUT._validations['password'] == {'re': None, 'doc': "User's password"}
     assert User.PUT._validations['username'] == {'re': '[a-z]+', 'doc': None}
+
+def test_serialisation_bool():
+    class User(wsgiservice.Resource):
+        pass
+    u = User(None, None, None)
+    s = u.to_text_xml(True)
+    print s
+    assert s == '<response>true</response>'

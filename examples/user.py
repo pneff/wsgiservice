@@ -3,13 +3,17 @@ authenticate. This is currently a dummy implementation with ony in-memory
 storage.
 
 Similar to store.py but uses more of the REST framework."""
-
+import hashlib
 import uuid
 from datetime import timedelta
 import sys
 import logging
 import paste.urlmap
 from wsgiservice import *
+
+def get_hashed(password):
+    SALT = 'some_pwd_salt'
+    return hashlib.sha1(SALT + password).hexdigest()
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stderr)
 
@@ -32,7 +36,7 @@ class User(Resource):
         if email:
             users[id]['email'] = email
         if password:
-            users[id]['password'] = password
+            users[id]['password'] = get_hashed(password)
         return {'id': id, 'saved': True}
 
     def DELETE(self, id):
@@ -70,7 +74,7 @@ class UserEmailView(Resource):
     def POST(self, email, password, request):
         """Checks if the given user/password combination is correct. Returns
         the user hash if successful, returns False otherwise."""
-        if id in users and users['id'].get('password', '') == password:
+        if id in users and users['id'].get('password', '') == get_hashed(password):
             return users
         else:
             return False

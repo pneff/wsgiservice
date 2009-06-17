@@ -4,3 +4,4 @@
 .coverage
 others/
 docs/_build/
+.env/

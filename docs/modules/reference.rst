@@ -22,10 +22,10 @@ Exceptions
    :members:
 
 
-Request and Response
---------------------
+Resource
+--------
 
-.. automodule:: wsgiservice.objects
+.. automodule:: wsgiservice.resource
    :members:
 
 
@@ -33,4 +33,11 @@ Routing
 -------
 
 .. automodule:: wsgiservice.routing
+   :members:
+
+
+HTTP Status
+-----------
+
+.. automodule:: wsgiservice.status
    :members:

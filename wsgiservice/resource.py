@@ -156,9 +156,11 @@ class Resource(object):
         """Call an instance method replacing all the parameter names. The
         parameters are filled in from the following locations (in that order
         of precedence):
+
             1. Path parameters from routing
             2. GET parameters
             3. POST parameters
+
         The return value of the method is then returned.
         """
         method = getattr(self, method_name)

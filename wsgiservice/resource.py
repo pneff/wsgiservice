@@ -39,6 +39,12 @@ class Resource(object):
         self.response = response
         self.path_params = path_params
     
+    def OPTIONS(self):
+        """Default implementation of the OPTIONS verb. Outputs a list of
+        allowed methods on this resource in the `Allow` response header.
+        """
+        self.response.headers['Allow'] = self.get_allowed_methods()
+    
     def call(self):
         """Main entry point for calling this resource. Handles the method
         dispatching, response conversion, etc. for this resource.

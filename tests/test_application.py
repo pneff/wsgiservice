@@ -32,7 +32,7 @@ def test_app_handle_method_not_allowed():
     print res
     assert res.status == '405 Method Not Allowed'
     assert res.body == ''
-    assert res._headers['Allow'] == 'POST, PUT'
+    assert res._headers['Allow'] == 'OPTIONS, POST, PUT'
 
 def test_app_handle_method_not_known():
     app = wsgiservice.get_app(globals())
@@ -41,7 +41,7 @@ def test_app_handle_method_not_known():
     print res
     assert res.status == '501 Not Implemented'
     assert res.body == ''
-    assert res._headers['Allow'] == 'POST, PUT'
+    assert res._headers['Allow'] == 'OPTIONS, POST, PUT'
 
 def test_app_handle_response_201_abs():
     app = wsgiservice.get_app(globals())
@@ -60,6 +60,14 @@ def test_app_handle_response_201_rel():
     assert res.status == '201 Created'
     assert res.body == ''
     assert res.location == 'http://localhost/res2/foo'
+
+def test_app_handle_options():
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res2', {'REQUEST_METHOD': 'OPTIONS'})
+    res = app._handle_request(req)
+    print res
+    assert res.status == '200 OK'
+    assert res._headers['Allow'] == 'OPTIONS, POST, PUT'
 
 def test_app_get_simple():
     app = wsgiservice.get_app(globals())

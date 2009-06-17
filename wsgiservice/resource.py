@@ -62,8 +62,8 @@ class Resource(object):
             raise_501(self)
     
     def get_content_type(self):
-        """Determines the Content Type to serve from either the extension or
-        the Accept headers.
+        """Returns the Content Type to serve from either the extension or the
+        Accept headers.
         """
         extension = self.path_params.get('_extension')
         if extension in self.EXTENSION_MAP:
@@ -75,7 +75,7 @@ class Resource(object):
             else:
                 self.response.vary.append('Accept')
             return self.request.accept.first_match(self.AVAILABLE_TYPES)
-
+    
     def assert_conditions(self):
         """Handles various HTTP conditions and raises HTTP exceptions to
         abort the request.
@@ -96,9 +96,9 @@ class Resource(object):
         self.assert_condition_last_modified()
     
     def assert_condition_md5(self):
-        """If the Content-MD5 header is present in the request it's verified
-        against the MD5 hash of the request body. If they don't match a 400
-        HTTP response is returned.
+        """If the `Content-MD5` request header is present in the request it's
+        verified against the MD5 hash of the request body. If they don't
+        match, a 400 HTTP response is returned.
         """
         if 'Content-MD5' in self.request.headers:
             body_md5 = hashlib.md5(self.request.body_file.read()).hexdigest()
@@ -106,6 +106,10 @@ class Resource(object):
                 raise_400(self, msg='Invalid Content-MD5 request header.')
     
     def assert_condition_etag(self):
+        """If the resource has an ETag (see :func:`get_etag`) the request
+        headers `If-Match` and `If-None-Match` are verified. May abort the
+        request with 304 or 412 response codes.
+        """
         if self.response.etag:
             etag = self.response.etag.replace('"', '')
             if not etag in self.request.if_match:
@@ -117,6 +121,11 @@ class Resource(object):
                     raise_412(self)
     
     def assert_condition_last_modified(self):
+        """If the resource has a last modified date (see
+        :func:`get_last_modified`) the request headers `If-Modified-Since` and
+        `If-Unmodified-Since` are verified. May abort the request with 304 or
+        412 response codes.
+        """
         rq = self.request
         rs = self.response
         if rs.last_modified:
@@ -143,19 +152,17 @@ class Resource(object):
         return None
     
     def get_allowed_methods(self):
-        """Return a coma-separated list of method names that are allowed on
-        this instance. Returns all upper-case method names. Useful to set the
-        ``Allowed`` response header.
+        """Returns a coma-separated list of method names that are allowed on
+        this instance. Useful to set the ``Allowed`` response header.
         """
         return ", ".join([method for method in dir(self)
             if method.upper() == method
             and callable(getattr(self, method))])
     
-    
     def call_method(self, method_name):
-        """Call an instance method replacing all the parameter names. The
-        parameters are filled in from the following locations (in that order
-        of precedence):
+        """Call an instance method filling in all the method parameters based
+        on their names. The parameters are filled in from the following
+        locations (in that order of precedence):
 
             1. Path parameters from routing
             2. GET parameters
@@ -179,7 +186,7 @@ class Resource(object):
             self.validate_param(method, param, value)
             params.append(value)
         return method(*params)
-
+    
     def validate_param(self, method, param, value):
         """Validates the parameter according to the configurations in the
         _validations dictionary of either the method or the instance. This
@@ -200,7 +207,7 @@ class Resource(object):
                 raise ValidationException("{0} value {1} does not validate.".format(param, value))
     
     def convert_response(self):
-        """Finish filling the webob.Response object so it's ready to be
+        """Finish filling the instance's response object so it's ready to be
         served to the client. This includes converting the body_raw property
         to the content type requested by the user if necessary.
         """

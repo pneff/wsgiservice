@@ -5,29 +5,27 @@ storage.
 Similar to store.py but uses more of the REST framework."""
 
 import uuid
-import wsgiservice
+from datetime import timedelta
+import sys
+import logging
+import paste.urlmap
+from wsgiservice import *
+
+logging.basicConfig(level=logging.DEBUG, stream=sys.stderr)
 
 users = {}
 
-
-def status_xml(retval):
-    """XML response for status of PUT and POST."""
-    return '<status saved="{0}"><id>{1}</id></status>'.format(
-        retval['saved'], retval['id'])
-
-
-@wsgiservice.mount('/{id}')
-@wsgiservice.validate('id', re=r'[-0-9a-zA-Z]{36}', doc='Document ID, must be a valid UUID.')
-class User(wsgiservice.Resource):
-    @wsgiservice.expires(wsgiservice.duration.day1)
+@mount('/{id}')
+@validate('id', re=r'[-0-9a-zA-Z]{36}', doc='User ID, must be a valid UUID.')
+class User(Resource):
+    @expires(timedelta(days=1))
     def GET(self, id):
         "Return the document indicated by the ID."
-        with wsgiservice.etag(id):
-            return users[id]
+        return users[id]
 
-    @wsgiservice.validate('email', doc="User's email. This is the unique identifier of a user.")
-    @wsgiservice.validate('password', doc="User's password.")
-    def PUT(self, request, id, email=None, password=None):
+    @validate('email', doc="User's email. This is the unique identifier of a user.")
+    @validate('password', doc="User's password.")
+    def PUT(self, id, email=None, password=None):
         """Overwrite or create the document indicated by the ID. Parameters
         are passed as key/value pairs in the POST data."""
         users.setdefault(id, {'id': id})
@@ -36,31 +34,39 @@ class User(wsgiservice.Resource):
         if password:
             users[id]['password'] = password
         return {'id': id, 'saved': True}
-    PUT.to_text_xml = status_xml
 
     def DELETE(self, id):
         "Delete the document indicated by the ID."
         del users[id]
         return {'id': id, 'deleted': True}
-    DELETE.to_text_xml = status_xml
 
+    def to_text_xml(self, retval):
+        if isinstance(retval, dict) and 'saved' in retval:
+            return '<status saved="{0}"><id>{1}</id></status>'.format(
+                retval['saved'], retval['id'])
+        elif isinstance(retval, dict) and 'deleted' in retval:
+            return '<status deleted="{0}"><id>{1}</id></status>'.format(
+                retval['deleted'], retval['id'])
+        else:
+            return Resource.to_text_xml(self, retval)
 
-@wsgiservice.mount('/')
-class Users(wsgiservice.Resource):
-    def POST(self, request):
+@mount('/')
+class Users(Resource):
+    @validate('email', doc="User's email. This is the unique identifier of a user.")
+    @validate('password', doc="User's password.")
+    def POST(self, email, password):
         """Create a new document, assigning a unique ID. Parameters are
         passed in as key/value pairs in the POST data."""
         id = str(uuid.uuid4())
-        res = User()
-        return res.PUT(request, id)
-    POST.to_text_xml = status_xml
+        res = User(self.request, self.response, self.path_params)
+        self.response.body_raw = res.PUT(id, email, password)
+        raise_201(self, id)
 
-
-@wsgiservice.mount('/auth/{email}')
-class UserEmailView(wsgiservice.Resource):
-    @wsgiservice.validate('email', doc="User's email. This is the unique identifier of a user.")
-    @wsgiservice.validate('password', doc="User's password.")
-    @wsgiservice.expires(wsgiservice.duration.hours4)
+@mount('/auth/{email}')
+@validate('email', doc="User's email. This is the unique identifier of a user.")
+@validate('password', doc="User's password.")
+class UserEmailView(Resource):
+    @expires(timedelta(hours=4))
     def POST(self, email, password, request):
         """Checks if the given user/password combination is correct. Returns
         the user hash if successful, returns False otherwise."""
@@ -69,7 +75,10 @@ class UserEmailView(wsgiservice.Resource):
         else:
             return False
 
-app = wsgiservice.get_app(('/1', globals()))
+userapp = get_app(globals())
+
+app = paste.urlmap.URLMap()
+app['/1'] = userapp
 
 if __name__ == '__main__':
     from wsgiref.simple_server import make_server

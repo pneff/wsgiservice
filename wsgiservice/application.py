@@ -84,9 +84,5 @@ def get_app(defs):
     :type defs: dict
     :rtype: :class:`Application`
     """
-    if isinstance(defs, tuple):
-        # A list of different applications mounted at different paths
-        # TODO
-        defs = defs[1]
     resources = [d for d in defs.values() if d in wsgiservice.Resource.__subclasses__()]
     return Application(resources)

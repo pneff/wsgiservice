@@ -87,7 +87,6 @@ def test_app_wsgi():
     start_response = mox.MockAnything()
     start_response('200 OK', [('Content-Length', '40'),
         ('Content-Type', 'application/json; charset=UTF-8'),
-        ('Vary', 'Accept'),
         ('Content-MD5', 'd6fe631718727b542d2ecb70dfd41e4b')])
     mox.Replay(start_response)
     res = app(env, start_response)
@@ -96,20 +95,17 @@ def test_app_wsgi():
     assert res == ['"GET was called with id theid, foo None"']
 
 def test_validation_method():
-    app = wsgiservice.get_app(globals())
     inst = Resource1(None, None, None)
-    app._validate_param(inst.GET, 'foo', '9')
+    inst.validate_param(inst.GET, 'foo', '9')
 
 def test_validation_class():
-    app = wsgiservice.get_app(globals())
     inst = Resource1(None, None, None)
-    app._validate_param(inst.GET, 'id', 'anyid')
+    inst.validate_param(inst.GET, 'id', 'anyid')
 
 def test_validation_with_re_none_value():
-    app = wsgiservice.get_app(globals())
     inst = Resource1(None, None, None)
     try:
-        app._validate_param(inst.GET, 'id', None)
+        inst.validate_param(inst.GET, 'id', None)
     except wsgiservice.exceptions.ValidationException, e:
         print e
         assert str(e) == 'Value for id must not be empty.'
@@ -117,10 +113,9 @@ def test_validation_with_re_none_value():
         assert False, "Expected an exception!"
 
 def test_validation_with_re_mismatch():
-    app = wsgiservice.get_app(globals())
     inst = Resource1(None, None, None)
     try:
-        app._validate_param(inst.GET, 'id', 'fo')
+        inst.validate_param(inst.GET, 'id', 'fo')
     except wsgiservice.exceptions.ValidationException, e:
         print e
         assert str(e) == 'id value fo does not validate.'
@@ -128,10 +123,9 @@ def test_validation_with_re_mismatch():
         assert False, "Expected an exception!"
 
 def test_validation_with_re_mismatch_toolong():
-    app = wsgiservice.get_app(globals())
     inst = Resource1(None, None, None)
     try:
-        app._validate_param(inst.GET, 'id', 'fooobarrr')
+        inst.validate_param(inst.GET, 'id', 'fooobarrr')
     except wsgiservice.exceptions.ValidationException, e:
         print e
         assert str(e) == 'id value fooobarrr does not validate.'
@@ -318,7 +312,7 @@ def test_verify_content_md5_invalid():
     assert 'ETag' not in res._headers
     assert 'Last-Modified' not in res._headers
     assert res.status == '400 Bad Request'
-    assert res.body == '<response><error>The Content-MD5 request header does not match the body.</error></response>'
+    assert res.body == '<response><error>Invalid Content-MD5 request header.</error></response>'
 
 def test_verify_content_md5_valid():
     app = wsgiservice.get_app(globals())

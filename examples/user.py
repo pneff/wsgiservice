@@ -22,6 +22,8 @@ users = {}
 @mount('/{id}')
 @validate('id', re=r'[-0-9a-zA-Z]{36}', doc='User ID, must be a valid UUID.')
 class User(Resource):
+    NOT_FOUND = (KeyError,)
+    
     @expires(timedelta(days=1))
     def GET(self, id):
         "Return the document indicated by the ID."

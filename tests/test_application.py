@@ -11,13 +11,15 @@ def test_getapp():
     app = wsgiservice.get_app(globals())
     print app
     assert isinstance(app, wsgiservice.application.Application)
-    assert len(app._resources) == 5
-    resources = (Resource1, Resource2, Resource3, Resource4, Resource5)
+    assert len(app._resources) == 6
+    resources = (Resource1, Resource2, Resource3, Resource4, Resource5,
+        Resource6)
     assert app._resources[0] in resources
     assert app._resources[1] in resources
     assert app._resources[2] in resources
     assert app._resources[3] in resources
     assert app._resources[4] in resources
+    assert app._resources[5] in resources
 
 def test_app_handle_404():
     app = wsgiservice.get_app(globals())
@@ -380,6 +382,22 @@ def test_exception_xml():
     assert res.status == '500 Internal Server Error'
     assert res.body == '<response><error>Some random exception.</error></response>'
 
+def test_res6_default():
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res6/uid')
+    res = app._handle_request(req)
+    print res
+    assert res.status == '200 OK'
+    assert res.body == '<response>works</response>'
+
+def test_notfound_xml():
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res6/foo')
+    res = app._handle_request(req)
+    print res
+    assert res.status == '404 Not Found'
+    assert res.body == '<response><error>Not Found</error></response>'
+
 
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'
@@ -430,3 +448,12 @@ class Resource5(wsgiservice.Resource):
             raise Exception("Some random exception.")
         else:
             return 'Throwing nothing'
+
+class Resource6(wsgiservice.Resource):
+    class DummyException(Exception):
+        pass
+    NOT_FOUND = (KeyError, DummyException)
+    _path = '/res6/{id}'
+    items = {'uid': 'works'}
+    def GET(self, id):
+        return self.items[id]

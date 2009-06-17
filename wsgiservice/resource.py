@@ -25,6 +25,10 @@ class Resource(object):
     :var EXTENSION_MAP: Dictionary mapping file extensions to MIME types. Used
         by :func:`get_content_type` to determine the requested MIME type.
         (Default: '.xml' => 'text/xml' and '.json' => 'application/json')
+    :var NOT_FOUND: A tuple of exceptions that should be treated as 404. An
+        ideal candidate is KeyError if you do dictionary accesses. Used by
+        :func:`call` which calls :func:`handle_exception_404` whenever an
+        exception from this tuple occurs. (Default: Empty tuple)
     """
     XML_ROOT_TAG = 'response'
     KNOWN_METHODS = ['OPTIONS', 'GET', 'HEAD', 'POST', 'PUT', 'DELETE',
@@ -33,6 +37,7 @@ class Resource(object):
         '.xml': 'text/xml',
         '.json': 'application/json'
     }
+    NOT_FOUND = ()
 
     def __init__(self, request, response, path_params):
         self.request = request
@@ -48,6 +53,14 @@ class Resource(object):
     def call(self):
         """Main entry point for calling this resource. Handles the method
         dispatching, response conversion, etc. for this resource.
+        Catches all exceptions.
+
+            * :class:`ResponseException`: Replaces the instance's response
+              attribute with the one fromthe exception.
+            * For all exceptions in the :attr:`NOT_FOUND` tuple
+              :func:`handle_exception_404` is called.
+            * For all other exceptions deriving from the :class:`Exception`
+              base class, the :func:`handle_exception` method is called.
         """
         self.type = self.get_content_type()
         try:
@@ -57,6 +70,8 @@ class Resource(object):
         except ResponseException, e:
             # a response was raised, catch it
             self.response = e.response
+        except self.NOT_FOUND, e:
+            self.handle_exception_404(e)
         except Exception, e:
             self.handle_exception(e)
         self.convert_response()
@@ -305,12 +320,18 @@ class Resource(object):
             retval.append(xml_escape(str(value)))
         return "".join(retval)
     
-
     def handle_exception(self, e):
-        """Handles the given exception. By default it will log it, set the
-        response code to 500 and output the exception message as an error
-        message.
+        """Handles the given exception: logs the exception, sets the response
+        code to 500 and outputs the exception message as an error message.
         """
         logger.exception("An exception occured while handling the request.")
         self.response.body_raw = {'error': str(e)}
         self.response.status = 500
+    
+    def handle_exception_404(self, e):
+        """Handles the given exception: logs the exception, sets the response
+        code to 404 and outputs a Not Found error message.
+        """
+        logger.exception("A 404 Not Found exception occured while handling the request.")
+        self.response.body_raw = {'error': 'Not Found'}
+        self.response.status = 404

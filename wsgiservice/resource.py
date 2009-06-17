@@ -16,12 +16,23 @@ class Resource(object):
     
     For each HTTP call the corresponding method (equal to the HTTP method)
     will be called.
+
+    :var XML_ROOT_TAG: The root tag for generated XML output. Used by
+        :func:`to_text_xml`. (Default: 'response')
+    :var KNOWN_METHODS: List of the known HTTP methods. Used by
+        :func:`get_method` to handle methods that are not implemented.
+        (Default: All methods defined by the HTTP 1.1 standard :rfc:`2616`)
+    :var EXTENSION_MAP: Dictionary mapping file extensions to MIME types. Used
+        by :func:`get_content_type` to determine the requested MIME type.
+        (Default: '.xml' => 'text/xml' and '.json' => 'application/json')
     """
     XML_ROOT_TAG = 'response'
-    KNOWN_METHODS = ('OPTIONS', 'GET', 'HEAD', 'POST', 'PUT', 'DELETE',
-                     'TRACE', 'CONNECT')
-    EXTENSION_MAP = { '.xml': 'text/xml', '.json': 'application/json'}
-    AVAILABLE_TYPES = ['text/xml', 'application/json']
+    KNOWN_METHODS = ['OPTIONS', 'GET', 'HEAD', 'POST', 'PUT', 'DELETE',
+                     'TRACE', 'CONNECT']
+    EXTENSION_MAP = {
+        '.xml': 'text/xml',
+        '.json': 'application/json'
+    }
 
     def __init__(self, request, response, path_params):
         self.request = request
@@ -45,7 +56,9 @@ class Resource(object):
     
     def get_method(self, method=None):
         """Returns the method to call on this instance as a string. Raises a
-        HTTP exception if no method can be found.
+        HTTP exception if no method can be found. Aborts with a 405 status
+        code for known methods (based on the :attr:`KNOWN_METHODS` list) and a
+        501 status code for all other methods.
         """
         if method is None:
             method = self.request.method
@@ -63,7 +76,8 @@ class Resource(object):
     
     def get_content_type(self):
         """Returns the Content Type to serve from either the extension or the
-        Accept headers.
+        Accept headers. Uses the :attr:`EXTENSION_MAP` dictionary for all the
+        configured MIME types.
         """
         extension = self.path_params.get('_extension')
         if extension in self.EXTENSION_MAP:
@@ -74,7 +88,7 @@ class Resource(object):
                 self.response.vary = ['Accept']
             else:
                 self.response.vary.append('Accept')
-            return self.request.accept.first_match(self.AVAILABLE_TYPES)
+            return self.request.accept.first_match(self.EXTENSION_MAP.values())
     
     def assert_conditions(self):
         """Handles various HTTP conditions and raises HTTP exceptions to
@@ -236,7 +250,7 @@ class Resource(object):
         
         Uses some heuristics to convert the data to XML:
           - Default root tag is 'response', but that can be overwritting by
-            overwriting the variable XML_ROOT_TAG instance variable.
+            overwriting the variable :attr:`XML_ROOT_TAG` instance variable.
           - In lists and dictionaries, the keys become the tag name.
           - All other values are appended as is.
         

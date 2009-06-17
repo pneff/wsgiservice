@@ -108,9 +108,7 @@ class Resource(object):
               the modification date of this resource.
         """
         self.assert_condition_md5()
-        etag = self.call_method('get_etag')
-        if etag:
-            self.response.etag = '"' + etag.replace('"', '') + '"'
+        etag = self.clean_etag(self.call_method('get_etag'))
         self.response.last_modified = self.call_method('get_last_modified')
         self.assert_condition_etag()
         self.assert_condition_last_modified()
@@ -160,6 +158,21 @@ class Resource(object):
         the ``If-Match`` and ``If-None-Match`` request headers.
         """
         return None
+    
+    def clean_etag(self, etag):
+        """Cleans the ETag as returned by get_etag. Will wrap it in quotes
+        and append the extension for the current MIME type.
+        """
+        if etag:
+            etag = etag.replace('"', '')
+            ext = None
+            for key, value in self.EXTENSION_MAP.iteritems():
+                if value == self.type:
+                    ext = key[1:]
+                    break
+            if ext:
+                etag += '_' + ext
+            self.response.etag = '"' +  etag + '"'
     
     def get_last_modified(self):
         """Return a :class:`datetime.datetime` object of the when the resource

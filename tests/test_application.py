@@ -189,7 +189,21 @@ def test_etag_generate():
     req = Request.blank('/res4?id=myid')
     res = app._handle_request(req)
     print res._headers
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
+
+def test_etag_generate_json():
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res4?id=myid', {'HTTP_ACCEPT': 'application/json'})
+    res = app._handle_request(req)
+    print res
+    assert res._headers['ETag'] == '"myid_json"'
+
+def test_etag_generate_json_ext():
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res4.json?id=myid')
+    res = app._handle_request(req)
+    print res
+    assert res._headers['ETag'] == '"myid_json"'
 
 def test_etag_if_match_false():
     app = wsgiservice.get_app(globals())
@@ -197,15 +211,15 @@ def test_etag_if_match_false():
         {'HTTP_IF_MATCH': '"otherid"'})
     res = app._handle_request(req)
     print res
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '412 Precondition Failed'
 
 def test_etag_if_match_true():
     app = wsgiservice.get_app(globals())
-    req = Request.blank('/res4?id=myid', {'HTTP_IF_MATCH': '"myid"'})
+    req = Request.blank('/res4?id=myid', {'HTTP_IF_MATCH': '"myid_xml"'})
     res = app._handle_request(req)
     print res
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '200 OK'
 
 def test_etag_if_match_not_set():
@@ -213,35 +227,35 @@ def test_etag_if_match_not_set():
     req = Request.blank('/res4?id=myid')
     res = app._handle_request(req)
     print res
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '200 OK'
 
 def test_etag_if_none_match_get_true():
     app = wsgiservice.get_app(globals())
-    req = Request.blank('/res4?id=myid', {'HTTP_IF_NONE_MATCH': '"myid"'})
+    req = Request.blank('/res4?id=myid', {'HTTP_IF_NONE_MATCH': '"myid_xml"'})
     res = app._handle_request(req)
     print res
     assert res.body == ''
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
 
 def test_etag_if_none_match_head_true():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
-        {'HTTP_IF_NONE_MATCH': '"myid"', 'REQUEST_METHOD': 'HEAD'})
+        {'HTTP_IF_NONE_MATCH': '"myid_xml"', 'REQUEST_METHOD': 'HEAD'})
     res = app._handle_request(req)
     print res
     assert res.body == ''
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
 
 def test_etag_if_none_match_post_true():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
-        {'HTTP_IF_NONE_MATCH': '"myid"', 'REQUEST_METHOD': 'POST'})
+        {'HTTP_IF_NONE_MATCH': '"myid_xml"', 'REQUEST_METHOD': 'POST'})
     res = app._handle_request(req)
     print res
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '412 Precondition Failed'
 
 def test_etag_if_none_match_false():
@@ -250,9 +264,8 @@ def test_etag_if_none_match_false():
         {'HTTP_IF_NONE_MATCH': '"otherid"'})
     res = app._handle_request(req)
     print res
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '200 OK'
-
 
 def test_modified_generate():
     app = wsgiservice.get_app(globals())
@@ -269,7 +282,7 @@ def test_if_modified_since_false():
     print res
     assert res.body == ''
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
 
 def test_if_modified_since_true():
@@ -287,7 +300,7 @@ def test_if_unmodified_since_false():
         {'HTTP_IF_UNMODIFIED_SINCE': 'Fri, 01 May 2009 12:30:00 GMT'})
     res = app._handle_request(req)
     print res
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res.status == '412 Precondition Failed'
 
@@ -299,7 +312,7 @@ def test_if_unmodified_since_false_head():
     res = app._handle_request(req)
     print res
     assert res.body == ''
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res.status == '412 Precondition Failed'
 
@@ -311,7 +324,7 @@ def test_if_unmodified_since_false_post():
     res = app._handle_request(req)
     print res
     print res.status
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res.status == '412 Precondition Failed'
 
@@ -322,7 +335,7 @@ def test_if_unmodified_since_true():
         'REQUEST_METHOD': 'POST'})
     res = app._handle_request(req)
     print res
-    assert res._headers['ETag'] == '"myid"'
+    assert res._headers['ETag'] == '"myid_xml"'
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res.status == '200 OK'
 

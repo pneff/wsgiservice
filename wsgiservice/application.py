@@ -21,8 +21,6 @@ class Application(object):
     .. todo:: Abstract away error and status code handling
     .. todo:: Easy deployment using good configuration file handling
     .. todo:: Create usable REST API documentation from source
-    .. todo:: Must return different ETags for different representations of a
-       resource.
     """
     def __init__(self, resources):
         self._resources = resources

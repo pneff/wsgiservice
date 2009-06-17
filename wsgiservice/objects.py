@@ -1,11 +1,11 @@
-"""Objects to abstract the request and response handling."""
+"""Objects to abstract the response handling."""
 import cgi
 import hashlib
 import json
 import logging
 import re
 from xml.sax.saxutils import escape as xml_escape
-from webob import Request
+import webob
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,7 @@ class Response(object):
             logger.debug("Using response type %s based on extension %s",
                 self.type, extension)
         else:
-            request = Request(environ)
+            request = webob.Request(environ)
             self.type = request.accept.first_match(self._available_types)
             logger.debug("Using response type %s", self.type)
         self.convert_type = self.type

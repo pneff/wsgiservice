@@ -5,7 +5,7 @@ Creating a WsgiService application requires very little code. First you'll need 
 
     from wsgiservice import *
 
-Next you create a subclass :class:`wsgiservice.Resource` which will handle the different representations of a source. For example a document resource which stores documents in an in-memory dictionary::
+Next you create a subclass of :class:`wsgiservice.Resource` which will handle the different representations of a resource. For example a document resource which stores documents in an in-memory dictionary::
 
     data = {}
 
@@ -49,7 +49,7 @@ Let's also create a ``Documents`` resource which can be used to create a new doc
             res = Document()
             return res.PUT(request, id)
 
-You see how easy it is to use an existing request to do the work of saving. Unfortunately there is currently no way to put that POST action for creation in the ``Document`` resource where it would semantically belong.
+You see how easy it is to use an existing request to do the work of saving.
 
 Finally you'll need to create the actual WSGI application and serve it::
 

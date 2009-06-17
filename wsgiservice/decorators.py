@@ -46,6 +46,9 @@ def expires(duration, currtime=time.gmtime):
     
     :param duration: Age which this resource may have before becoming stale.
     :type duration: :mod:`datetime.timedelta`
+    :param currtime: Function used to find out the current UTC time. This is
+                     used for testing and not required in production code.
+    :type currtime: Function returning a :mod:`time.struct_time`
     """
     @decorator
     def _expires(func, *args, **kwargs):

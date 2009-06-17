@@ -61,7 +61,7 @@ class Application(object):
             return self._call_resource(res, path_params, environ)
 
     def _call_resource(self, res, path_params, environ):
-        request = wsgiservice.Request(environ)
+        request = webob.Request(environ)
         instance = res()
         method = self._resolve_method(instance, request.method)
         if not method:
@@ -220,9 +220,10 @@ class Application(object):
                 raise ValidationException("{0} value {1} does not validate.".format(param, value))
 
 def get_app(defs):
-    """Returns a WSGI app which serves the objects in the defs. Usually this
-    is called with return value globals() from the module where the resources
-    are defined. The returned WSGI application will serve all subclasses of
+    """Small wrapper function to returns an instance of :class:`Application`
+    which serves the objects in the defs. Usually this is called with return
+    value globals() from the module where the resources are defined. The
+    returned WSGI application will serve all subclasses of
     :class:`wsgiservice.Resource` found in the dictionary.
 
     :param defs: Each :class:`wsgiservice.Resource` object found in the values

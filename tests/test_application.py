@@ -1,6 +1,7 @@
 import mox
 import StringIO
 import time
+from webob import Request
 import wsgiservice
 import wsgiservice.application
 import wsgiservice.exceptions
@@ -45,7 +46,7 @@ def test_app_handle_method_not_known():
 def test_app_get_simple():
     app = wsgiservice.get_app(globals())
     body = 'foo=42&baz=foobar'
-    env = wsgiservice.Request.blank('/res1/theid', {
+    env = Request.blank('/res1/theid', {
         'CONTENT_LENGTH': str(len(body)),
         'CONTENT_TYPE': 'application/x-www-form-urlencoded',
         'wsgi.input': StringIO.StringIO(body)}).environ
@@ -59,7 +60,7 @@ def test_app_get_simple():
 def test_app_head_revert_to_get_simple():
     app = wsgiservice.get_app(globals())
     body = 'foo=42&baz=foobar'
-    env = wsgiservice.Request.blank('/res1/theid', {
+    env = Request.blank('/res1/theid', {
         'REQUEST_METHOD': 'HEAD',
         'CONTENT_LENGTH': str(len(body)),
         'CONTENT_TYPE': 'application/x-www-form-urlencoded',
@@ -72,7 +73,7 @@ def test_app_head_revert_to_get_simple():
 def test_app_post_simple():
     app = wsgiservice.get_app(globals())
     body = 'foo=42&baz=foobar'
-    env = wsgiservice.Request.blank('/res1/theid', {
+    env = Request.blank('/res1/theid', {
         'REQUEST_METHOD': 'POST', 'CONTENT_LENGTH': str(len(body)),
         'CONTENT_TYPE': 'application/x-www-form-urlencoded',
         'wsgi.input': StringIO.StringIO(body)}).environ
@@ -83,7 +84,7 @@ def test_app_post_simple():
 
 def test_app_wsgi():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res1/theid.json').environ
+    env = Request.blank('/res1/theid.json').environ
     start_response = mox.MockAnything()
     start_response('200 OK', [('Content-Type', 'application/json; charset=UTF-8'),
         ('Content-MD5', '0a54c1e2c62e5a59b418bf462edb3ac9')])
@@ -138,14 +139,14 @@ def test_validation_with_re_mismatch_toolong():
 
 def test_with_expires():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res3').environ
+    env = Request.blank('/res3').environ
     res = app._handle_request(env)
     print res._headers
     assert res._headers['Cache-Control'] == 'max-age=138'
 
 def test_with_expires_calculations():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4').environ
+    env = Request.blank('/res4').environ
     res = app._handle_request(env)
     print res._headers
     assert res._headers['Cache-Control'] == 'max-age=138'
@@ -153,7 +154,7 @@ def test_with_expires_calculations():
 
 def test_with_expires_calculations_double_wrapped():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4', {'REQUEST_METHOD': 'POST'}).environ
+    env = Request.blank('/res4', {'REQUEST_METHOD': 'POST'}).environ
     res = app._handle_request(env)
     print res._headers
     assert res._headers['Cache-Control'] == 'max-age=139'
@@ -162,14 +163,14 @@ def test_with_expires_calculations_double_wrapped():
 
 def test_etag_generate():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid').environ
+    env = Request.blank('/res4?id=myid').environ
     res = app._handle_request(env)
     print res._headers
     assert res._headers['ETag'] == '"myid"'
 
 def test_etag_if_match_false():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_MATCH': '"otherid"'}).environ
     res = app._handle_request(env)
     print res
@@ -178,7 +179,7 @@ def test_etag_if_match_false():
 
 def test_etag_if_match_true():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_MATCH': '"myid"'}).environ
     res = app._handle_request(env)
     print res
@@ -187,7 +188,7 @@ def test_etag_if_match_true():
 
 def test_etag_if_match_not_set():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid').environ
+    env = Request.blank('/res4?id=myid').environ
     res = app._handle_request(env)
     print res
     assert res._headers['ETag'] == '"myid"'
@@ -195,7 +196,7 @@ def test_etag_if_match_not_set():
 
 def test_etag_if_none_match_get_true():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_NONE_MATCH': '"myid"'}).environ
     res = app._handle_request(env)
     print res
@@ -205,7 +206,7 @@ def test_etag_if_none_match_get_true():
 
 def test_etag_if_none_match_head_true():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_NONE_MATCH': '"myid"', 'REQUEST_METHOD': 'HEAD'}).environ
     res = app._handle_request(env)
     print res
@@ -215,7 +216,7 @@ def test_etag_if_none_match_head_true():
 
 def test_etag_if_none_match_post_true():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_NONE_MATCH': '"myid"', 'REQUEST_METHOD': 'POST'}).environ
     res = app._handle_request(env)
     print res
@@ -224,7 +225,7 @@ def test_etag_if_none_match_post_true():
 
 def test_etag_if_none_match_false():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_NONE_MATCH': '"otherid"'}).environ
     res = app._handle_request(env)
     print res
@@ -234,14 +235,14 @@ def test_etag_if_none_match_false():
 
 def test_modified_generate():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid').environ
+    env = Request.blank('/res4?id=myid').environ
     res = app._handle_request(env)
     print res._headers
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
 
 def test_if_modified_since_false():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_MODIFIED_SINCE': 'Fri, 01 May 2009 14:30:00 GMT'}).environ
     res = app._handle_request(env)
     print res
@@ -252,7 +253,7 @@ def test_if_modified_since_false():
 
 def test_if_modified_since_true():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_MODIFIED_SINCE': 'Fri, 01 May 2009 14:18:10 GMT'}).environ
     res = app._handle_request(env)
     print res
@@ -261,7 +262,7 @@ def test_if_modified_since_true():
 
 def test_if_unmodified_since_false():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_UNMODIFIED_SINCE': 'Fri, 01 May 2009 12:30:00 GMT'}).environ
     res = app._handle_request(env)
     print res
@@ -271,7 +272,7 @@ def test_if_unmodified_since_false():
 
 def test_if_unmodified_since_false_head():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_UNMODIFIED_SINCE': 'Thu, 30 Apr 2009 19:30:00 GMT',
         'REQUEST_METHOD': 'HEAD'}).environ
     res = app._handle_request(env)
@@ -283,7 +284,7 @@ def test_if_unmodified_since_false_head():
 
 def test_if_unmodified_since_false_post():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_UNMODIFIED_SINCE': 'Thu, 30 Apr 2009 19:30:00 GMT',
         'REQUEST_METHOD': 'POST'}).environ
     res = app._handle_request(env)
@@ -295,7 +296,7 @@ def test_if_unmodified_since_false_post():
 
 def test_if_unmodified_since_true():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res4?id=myid',
+    env = Request.blank('/res4?id=myid',
         {'HTTP_IF_UNMODIFIED_SINCE': 'Fri, 01 May 2009 14:30:00 GMT',
         'REQUEST_METHOD': 'POST'}).environ
     res = app._handle_request(env)
@@ -306,7 +307,7 @@ def test_if_unmodified_since_true():
 
 def test_verify_content_md5_invalid():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res1/theid', {
+    env = Request.blank('/res1/theid', {
         'HTTP_CONTENT_MD5': '89d5739baabbbe65be35cbe61c88e06d',
         'wsgi.input': StringIO.StringIO('foobar')}).environ
     res = app._handle_request(env)
@@ -320,7 +321,7 @@ def test_verify_content_md5_invalid():
 
 def test_verify_content_md5_valid():
     app = wsgiservice.get_app(globals())
-    env = wsgiservice.Request.blank('/res1/theid', {
+    env = Request.blank('/res1/theid', {
         'HTTP_CONTENT_MD5': '89d5739baabbbe65be35cbe61c88e06d',
         'wsgi.input': StringIO.StringIO('Foobar')}).environ
     res = app._handle_request(env)

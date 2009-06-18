@@ -575,7 +575,7 @@ class Help(Resource):
                 pr.create_form_buttons = function(parent) {
                     var subm = document.createElement('input');
                     subm.type = 'submit';
-                    subm.value = this.method_name;
+                    subm.value = 'Execute request (' + this.method_name + ')';
                     subm.className = 'submit';
                     parent.appendChild(subm);
 

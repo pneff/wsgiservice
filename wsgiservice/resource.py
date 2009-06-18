@@ -501,7 +501,7 @@ class Help(Resource):
                 };
                 pr.create_form = function(parent) {
                     var form = document.createElement('form');
-                    form.action = '#';
+                    form.action = '';
                     form.target = '_blank';
                     var that = this;
                     form.onsubmit = function() {
@@ -591,7 +591,7 @@ class Help(Resource):
                         if (param['path_param']) {
                             path = path.replace('{' + param_name + '}', params[param_name]);
                         } else {
-                            data += escape(param_name) + '=' + escape(params[param_name]);
+                            data += escape(param_name) + '=' + escape(params[param_name]) + '&';
                         }
                     }
                     if (data === '') {
@@ -603,6 +603,9 @@ class Help(Resource):
                     }
 
                     xhr.open(this.method_name, path, true);
+                    if (data !== null) {
+                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    }
                     xhr.send(data); 
 
                     return false;

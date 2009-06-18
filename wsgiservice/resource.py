@@ -518,7 +518,7 @@ class Help(Resource):
                     for (param in this.method.parameters) {
                         var param_id = 'param_' + this.resource['name'] + '_' + this.method_name + '_' + param;
                         var d = document.createElement('div');
-                        d.className = 'form_element request_param ' + 'request_param_' + param;
+                        d.className = 'param';
                         d.id = param_id;
 
                         var input_id = param_id + '_input';
@@ -535,6 +535,31 @@ class Help(Resource):
 
                         parent.appendChild(d);
                     }
+
+                    // Add drop-down for request-type
+                    var d = document.createElement('div');
+                    d.className = 'header';
+
+                    var extid = 'header_' + this.resource['name'] + '_' + this.method_name + '_accept';
+                    var lbl = document.createElement('label');
+                    lbl.innerHTML = 'Accept (header)';
+                    lbl.setAttribute('for', extid);
+                    d.appendChild(lbl);
+
+                    var select = document.createElement('select');
+                    select.name = 'Accept';
+                    select.id = extid;
+                    d.appendChild(select);
+
+                    var emap = this.resource.properties.EXTENSION_MAP;
+                    for (extension in emap) {
+                        var option = document.createElement('option');
+                        option.value = emap[extension];
+                        option.innerHTML = this.format(emap[extension]);
+                        option.id = extid;
+                        select.appendChild(option);
+                    }
+                    parent.appendChild(d);
                 };
                 pr.create_form_buttons = function(parent) {
                     var subm = document.createElement('input');
@@ -578,22 +603,24 @@ class Help(Resource):
                     };
 
                     // Get parameters and fill them into path, query string and POST data
-                    var params = this.get_parameters();
-                    if (params['__error__']) {
+                    var input = this.get_parameters();
+                    if (input['__error__']) {
                         this.result_node.innerHTML = 'ERROR: Missing data.';
                         return false;
                     }
 
                     var path = this.resource.path;
                     var data = '';
+                    // Request parameters
                     for (param_name in this.method.parameters) {
                         var param = this.method.parameters[param_name];
                         if (param['path_param']) {
-                            path = path.replace('{' + param_name + '}', params[param_name]);
+                            path = path.replace('{' + param_name + '}', input['params'][param_name]);
                         } else {
-                            data += escape(param_name) + '=' + escape(params[param_name]) + '&';
+                            data += escape(param_name) + '=' + escape(input['params'][param_name]) + '&';
                         }
                     }
+
                     if (data === '') {
                         data = null;
                     } else if (this.method_name == 'GET' || this.method_name == 'HEAD') {
@@ -605,6 +632,10 @@ class Help(Resource):
                     xhr.open(this.method_name, path, true);
                     if (data !== null) {
                         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    }
+                    // Request headers
+                    for (header in input['headers']) {
+                        xhr.setRequestHeader(header, input['headers'][header]);
                     }
                     xhr.send(data); 
 
@@ -647,14 +678,29 @@ class Help(Resource):
                     return statusText;
                 };
                 pr.get_parameters = function() {
-                    var params = {'__error__': false};
+                    var params = {'__error__': false, 'headers': {}, 'params': {}};
+                    var fields = [];
+
+                    // Get all fields
                     var inputs = this.target.getElementsByTagName('input');
-                    var inp = null;
                     for (var i = 0; i < inputs.length; i++) {
-                        inp = inputs[i];
-                        if (inp.type == 'text') {
+                        fields.push(inputs[i]);
+                    }
+                    var selects = this.target.getElementsByTagName('select');
+                    for (var i = 0; i < selects.length; i++) {
+                        fields.push(selects[i]);
+                    }
+
+
+                    var inp = null;
+                    for (var i = 0; i < fields.length; i++) {
+                        inp = fields[i];
+                        var type = inp.parentNode.className;
+                        if (type == 'header') {
+                            params['headers'][inp.name] = inp.value;
+                        } else if (type == 'param') {
                             inp.className = '';
-                            params[inp.name] = inp.value;
+                            params['params'][inp.name] = inp.value;
 
                             // Validate input
                             if (this.method.parameters[inp.name]['mandatory'] && inp.value === '') {

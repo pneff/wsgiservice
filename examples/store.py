@@ -44,9 +44,17 @@ class Documents(wsgiservice.Resource):
         return res.PUT(id)
 
 
+import re
 import inspect
+from xml.sax.saxutils import escape
+
 @wsgiservice.mount('/_internal/docs')
 class Help(wsgiservice.Resource):
+    EXTENSION_MAP = {
+        '.xml': 'text/xml',
+        '.json': 'application/json',
+        '.html': 'text/html',
+    }
     XML_ROOT_TAG = 'help'
     app = None
 
@@ -114,6 +122,78 @@ class Help(wsgiservice.Resource):
         else:
             return wsgiservice.Resource._get_xml_value(self, value)
 
+    def to_text_html(self, raw):
+        """Returns the HTML string version of the given raw Python object.
+        Hard-coded to return a nicely-presented service information document.
+        
+        :param raw: The return value of the resource method.
+        :type raw: Any valid Python object
+        :rtype: string
+        """
+        retval = ["""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+            <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+            <head>
+                <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+                <title>Help Example</title>
+            </head>
+            <body>
+                <h1>WsgiService help</h1>
+        """]
+        self.to_text_html_overview(retval, raw)
+        self.to_text_html_resources(retval, raw)
+        retval.append('</body></html>')
+        return re.compile('^ *', re.MULTILINE).sub('', "".join(retval))
+
+    def to_text_html_overview(self, retval, raw):
+        """Add the overview table to the HTML output."""
+        retval.append('<table id="overview">')
+        retval.append('<tr><th>Resource</th><th>Path</th></tr>')
+        for resource in raw:
+            retval.append('<tr><td><a href="#{0}">{0}</a></td><td>{1}</td></tr>'.format(
+                escape(resource['name']), escape(resource['path'])))
+        retval.append('</table>')
+
+    def to_text_html_resources(self, retval, raw):
+        """Add the resources details to the HTML output."""
+        for resource in raw:
+            retval.append('<h2 id="{0}">{0}</h2>'.format(
+                escape(resource['name'])))
+            retval.append('<table class="config">')
+            retval.append('<tr><th>Path</th><td>{0}</td>'.format(escape(
+                resource['path'])))
+            representations = [value + ' (.' + key + ')' for key, value
+                in resource['properties']['EXTENSION_MAP'].iteritems()]
+            retval.append('<tr><th>Representations</th><td>{0}</td>'.format(
+                escape(', '.join(representations))))
+            retval.append('</table>')
+            self.to_text_html_methods(retval, resource)
+    
+    def to_text_html_methods(self, retval, resource):
+        """Add the methods of this resource to the HTML output."""
+        for method_name, method in resource['methods'].iteritems():
+            retval.append('<h3 id="{0}_{1}">{1}</h3>'.format(
+                escape(resource['name']), escape(method_name)))
+            if method['desc']:
+                retval.append('<p class="desc">{0}</p>'.format(escape(method['desc'])))
+            if method['parameters']:
+                retval.append('<table class="parameters">')
+                retval.append('<tr><th>Name</th><th>Mandatory</th><th>Description</th><th>Validation</th>')
+                for param_name, param in method['parameters'].iteritems():
+                    mandatory = '-'
+                    description = param['desc']
+                    validation = ''
+                    if param['mandatory']:
+                        mandatory = 'Yes'
+                    if param['path_param']:
+                        mandatory += ' (Path parameter)'
+                    if param['validate_re']:
+                        validation = 'Regular expression: <tt>' + \
+                            escape(param['validate_re']) + '</tt>'
+                    retval.append('<tr><td>{0}</td><td>{1}</td><td>{2}</td>'
+                        '<td>{3}</td>'.format(escape(param_name),
+                        escape(mandatory), escape(description), validation))
+                retval.append('</table>')
 
 
 app = wsgiservice.get_app(globals())

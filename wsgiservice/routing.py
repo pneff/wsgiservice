@@ -11,7 +11,23 @@ class Router(object):
                       routed to.
     """
     def __init__(self, resources):
-        self._routes = []
+        resources = self._get_sorted(resources)
+        self._routes = self._compile(resources)
+
+    def _get_sorted(self, resources):
+        """Order the resources by priority - the most specific paths come
+        first.
+        """
+        tmp = []
+        for resource in resources:
+            path = resource._path
+            # Each slash counts as 10 priority, each variable takes one away
+            priority = path.count('/') * 10 - path.count('{')
+            tmp.append((priority, resource))
+        return [resource for prio, resource in reversed(sorted(tmp))]
+
+    def _compile(self, resources):
+        routes = []
         search_vars = re.compile(r'\{(\w+)\}').finditer
         for resource in resources:
             # Compile regular expression for each path
@@ -25,7 +41,8 @@ class Router(object):
             # Allow an extension to overwrite the mime type
             extensions = "|".join(wsgiservice.Response._extension_map.keys())
             regexp += '(?P<_extension>' + extensions + ')?$'
-            self._routes.append((re.compile(regexp).match, resource))
+            routes.append((re.compile(regexp).match, resource))
+        return routes
 
     def __call__(self, path):
         for match, resource in self._routes:

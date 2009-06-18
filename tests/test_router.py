@@ -38,6 +38,45 @@ def test_one_resource_unknown_path():
     print retval
     assert retval is None
 
+def test_two_resources():
+    router = wsgiservice.routing.Router([DummyResource2, DummyResource1])
+    _assert_two_resources(router)
+
+def test_two_resources_priorities():
+    """The more specific path should take precedence over the other one."""
+    router = wsgiservice.routing.Router([DummyResource1, DummyResource2])
+    _assert_two_resources(router)
+
+def test_two_resources_priorities_large():
+    """The more specific path should take precedence over the other one."""
+    router = wsgiservice.routing.Router([DummyResource1, DummyResource3])
+    retval = router('/foo/id')
+    print retval
+    assert retval[0]['id'] == 'id'
+    assert retval[0]['_extension'] is None
+    assert retval[1] is DummyResource1, retval[1]
+    retval = router('/foo/anything/else')
+    print retval
+    assert retval[0]['_extension'] is None
+    assert retval[1] is DummyResource3, retval[1]
 
 class DummyResource1(object):
     _path = '/foo/{id}'
+
+class DummyResource2(object):
+    _path = '/foo/id'
+
+class DummyResource3(object):
+    _path = '/foo/anything/else'
+
+def _assert_two_resources(router):
+    """Helper for some of the test_two_resources_* tests"""
+    retval = router('/foo/id')
+    print retval
+    assert retval[0]['_extension'] is None
+    assert retval[1] is DummyResource2, retval[1]
+    retval = router('/foo/anything')
+    print retval
+    assert retval[0]['id'] == 'anything'
+    assert retval[0]['_extension'] is None
+    assert retval[1] is DummyResource1, retval[1]

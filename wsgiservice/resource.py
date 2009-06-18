@@ -445,7 +445,224 @@ class Help(Resource):
                     h2 {margin-top: 0;}
                     .resource_details {padding-top: 2em;border-top: 1px dotted #ccc;margin-top: 2em;}
                     .method_details {margin-left: 2em;}
+                    
+                    /* JS form */
+                    form {
+                        padding: 1em;
+                        border: 1px solid #ccc;
+                    }
+                    input.error {
+                        background: #FCECEC;
+                        color: red;
+                        border: 1px solid red;
+                    }
+                    label {
+                        font-weight: bold;
+                        float: left;
+                        width: 10em;
+                    }
+                    p.form_element, input.submit {
+                        clear: left;
+                    }
+                    div.result {
+                        margin-top: 1em;
+                    }
+                    h4 {
+                        margin-bottom: 0.5em;
+                    }
                 </style>
+                <script>
+                /**
+                 * Adds a resource's method - a form to the current location with the ability
+                 * to submit a request to the service filling in all the parameters.
+                 */
+                function add_resource_method(target, resource, method_name, method) {
+                    new ResourceMethodForm(target, resource, method_name, method);
+                }
+
+                function ResourceMethodForm(target, resource, method_name, method) {
+                    this.targetName = target;
+                    this.target = document.getElementById(target);
+                    this.resource = resource;
+                    this.method_name = method_name;
+                    this.method = method;
+                    this.init();
+                }
+
+                var pr = ResourceMethodForm.prototype;
+
+                pr.init = function() {
+                    var fragment = document.createDocumentFragment();
+                    var form = this.create_form(fragment);
+                    this.create_form_params(form);
+                    this.create_form_buttons(form);
+                    this.create_result_field(form);
+                    this.target.appendChild(fragment);
+                };
+                pr.create_form = function(parent) {
+                    var form = document.createElement('form');
+                    form.action = '#';
+                    form.target = '_blank';
+                    var that = this;
+                    form.onsubmit = function() {
+                        return that.on_submit();
+                    };
+                    var h4 = document.createElement('h4');
+                    h4.innerHTML = 'Debug form';
+                    form.appendChild(h4);
+
+                    parent.appendChild(form);
+                    return form;
+                };
+                pr.create_form_params = function(parent) {
+                    for (param in this.method.parameters) {
+                        var param_id = 'param_' + this.resource['name'] + '_' + this.method_name + '_' + param;
+                        var d = document.createElement('div');
+                        d.className = 'form_element request_param ' + 'request_param_' + param;
+                        d.id = param_id;
+
+                        var input_id = param_id + '_input';
+                        var lbl = document.createElement('label');
+                        lbl.innerHTML = param;
+                        lbl.setAttribute('for', input_id);
+                        d.appendChild(lbl);
+
+                        var input = document.createElement('input');
+                        input.id = input_id;
+                        input.type = 'text';
+                        input.name = param;
+                        d.appendChild(input);
+
+                        parent.appendChild(d);
+                    }
+                };
+                pr.create_form_buttons = function(parent) {
+                    var subm = document.createElement('input');
+                    subm.type = 'submit';
+                    subm.value = this.method_name;
+                    subm.className = 'submit';
+                    parent.appendChild(subm);
+                };
+                pr.create_result_field = function(parent) {
+                    this.result_node = document.createElement('div');
+                    this.result_node.className = 'result';
+                    parent.appendChild(this.result_node);
+                };
+                pr.on_submit = function() {
+                    var xhr = null;
+                    var that = this;
+                    this.result_node.innerHTML = 'Executing...';
+
+                    if (window.XMLHttpRequest) {
+                        xhr = new XMLHttpRequest();
+                    } else if (window.ActiveXObject) {
+                        xhr = new ActiveXObject("Microsoft.XMLHTTP");
+                    }
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState == 4) {
+                            // Received
+                            var data = [
+                                '<h5>Status</h5>', xhr.status, ' ',
+                                that.get_status(xhr.status, xhr.statusText),
+                                '<h5>Response Headers</h5>',
+                                that.format(xhr.getAllResponseHeaders()),
+                                '<h5>Response Body</h5>',
+                                that.format(xhr.responseText),
+                                '(' + xhr.responseText.length + ' bytes)'
+                            ];
+                            that.result_node.innerHTML = '';
+                            for (var i = 0; i < data.length; i++) {
+                                that.result_node.innerHTML += data[i];
+                            }
+                        }
+                    };
+
+                    // Get parameters and fill them into path, query string and POST data
+                    var params = this.get_parameters();
+                    if (params['__error__']) {
+                        this.result_node.innerHTML = 'ERROR: Missing data.';
+                        return false;
+                    }
+
+                    var path = this.resource.path;
+                    var data = '';
+                    for (param_name in this.method.parameters) {
+                        var param = this.method.parameters[param_name];
+                        if (param['path_param']) {
+                            path = path.replace('{' + param_name + '}', params[param_name]);
+                        } else {
+                            data += escape(param_name) + '=' + escape(params[param_name]);
+                        }
+                    }
+                    if (data === '') {
+                        data = null;
+                    } else if (this.method_name == 'GET' || this.method_name == 'HEAD') {
+                        // Convert data to query string
+                        path += '?' + data;
+                        data = null;
+                    }
+
+                    xhr.open(this.method_name, path, true);
+                    xhr.send(data); 
+
+                    return false;
+                };
+                pr.format = function(str) {
+                    var str = str.replace(/&/g, "&amp;").replace(/</g, "&lt;").
+                        replace(/>/g, "&gt;");
+                    // Linkify HTTP URLs
+                    str = str.replace(/(http:\/\/[^ ]+)/g, '<a href="$1" target="_blank">$1</a>');
+                    str = '<pre>' + str + '</pre>';
+                    return str;
+                };
+                pr.get_status = function(status, statusText) {
+                    /* Need to get the status text manually as statusText is broken on
+                       Safari. */
+                    if (statusText == 'OK') {
+                        // Safari always uses OK, replace it manually
+                        var STATI = { 200: 'OK', 201: 'Created', 202: 'Accepted',
+                            203: 'Non-Authoritative Information', 204: 'No Content',
+                            205: 'Reset Content', 206: 'Partial Content',
+                            300: 'Multiple Choices', 301: 'Moved Permanently', 302: 'Found',
+                            303: 'See Other', 304: 'Not Modified', 305: 'Use Proxy',
+                            307: 'Temporary Redirect', 400: 'Bad Request',
+                            401: 'Unauthorized', 402: 'Payment Required', 403: 'Forbidden',
+                            404: 'Not Found', 405: 'Method Not Allowed', 406: 'Not Acceptable',
+                            407: 'Proxy Authentication Required', 408: 'Request Timeout',
+                            409: 'Conflict', 410: 'Gone', 411: 'Length Required',
+                            412: 'Precondition Failed', 413: 'Request Entity Too Large',
+                            414: 'Request-URI Too Long', 415: 'Unsupported Media Type',
+                            416: 'Requested Range Not Satisfiable', 417: 'Expectation Failed',
+                            500: 'Internal Server Error', 501: 'Not Implemented',
+                            502: 'Bad Gateway', 503: 'Service Unavailable',
+                            504: 'Gateway Timeout', 505: 'HTTP Version Not Supported'
+                        };
+                        if (typeof(STATI[status]) !== 'undefined') {
+                            return STATI[status];
+                        }
+                    }
+                    return statusText;
+                };
+                pr.get_parameters = function() {
+                    var params = {'__error__': false};
+                    var inputs = this.target.getElementsByTagName('input');
+                    var inp = null;
+                    for (var i = 0; i < inputs.length; i++) {
+                        inp = inputs[i];
+                        if (inp.type == 'text') {
+                            inp.className = '';
+                            params[inp.name] = inp.value;
+
+                            // Validate input
+                            if (this.method.parameters[inp.name]['mandatory'] && inp.value === '') {
+                                inp.className = 'error';
+                                params['__error__'] = true;
+                            }
+                        }
+                    }
+                    return params;
+                };
+                </script>
             </head>
             <body>
                 <h1>WsgiService help</h1>
@@ -484,7 +701,8 @@ class Help(Resource):
     def to_text_html_methods(self, retval, resource):
         """Add the methods of this resource to the HTML output."""
         for method_name, method in resource['methods'].iteritems():
-            retval.append('<div class="method_details">')
+            retval.append('<div class="method_details" id="{0}_{1}_container">'.format(
+                xml_escape(resource['name']), xml_escape(method_name)))
             retval.append('<h3 id="{0}_{1}">{1}</h3>'.format(
                 xml_escape(resource['name']), xml_escape(method_name)))
             if method['desc']:
@@ -508,3 +726,8 @@ class Help(Resource):
                         xml_escape(mandatory), xml_escape(description), validation))
                 retval.append('</table>')
             retval.append('</div>')
+            retval.append('<script>add_resource_method({0},{1},{2},{3});</script>'.format(
+                xml_escape(json.dumps(resource['name']+'_'+method_name+'_container')),
+                xml_escape(json.dumps(resource)),
+                xml_escape(json.dumps(method_name)),
+                xml_escape(json.dumps(method))))

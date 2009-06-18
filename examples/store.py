@@ -15,12 +15,11 @@ data = {}
 @wsgiservice.mount('/{id}')
 @wsgiservice.validate('id', re=r'[-0-9a-zA-Z]{36}', doc='User ID, must be a valid UUID.')
 class Document(wsgiservice.Resource):
+    NOT_FOUND = (KeyError,)
+
     def GET(self, id):
         "Return the document indicated by the ID."
-        try:
-            return data[id]
-        except KeyError:
-            wsgiservice.raise_404(self)
+        return data[id]
 
     def PUT(self, id):
         """Overwrite or create the document indicated by the ID. Parameters
@@ -41,7 +40,8 @@ class Documents(wsgiservice.Resource):
         passed in as key/value pairs in the POST data."""
         id = str(uuid.uuid4())
         res = Document(self.request, self.response, self.path_params)
-        return res.PUT(id)
+        self.response.body_raw = res.PUT(id)
+        wsgiservice.raise_201(self, id)
 
 app = wsgiservice.get_app(globals())
 

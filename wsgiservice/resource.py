@@ -470,6 +470,9 @@ class Help(Resource):
                     h4 {
                         margin-bottom: 0.5em;
                     }
+                    a.add_input {
+                        margin: 0.5em;
+                    }
                 </style>
                 <script>
                 /**
@@ -494,7 +497,10 @@ class Help(Resource):
                 pr.init = function() {
                     var fragment = document.createDocumentFragment();
                     var form = this.create_form(fragment);
-                    this.create_form_params(form);
+                    var input_container = document.createElement('div');
+                    this.input_container = input_container;
+                    form.appendChild(input_container);
+                    this.create_form_params(input_container);
                     this.create_form_buttons(form);
                     this.create_result_field(form);
                     this.target.appendChild(fragment);
@@ -536,6 +542,9 @@ class Help(Resource):
                     var input_id = id + '_input';
                     var lbl = document.createElement('label');
                     lbl.innerHTML = name;
+                    if (type == 'header') {
+                        lbl.innerHTML += ' (Header)';
+                    }
                     lbl.setAttribute('for', input_id);
                     d.appendChild(lbl);
 
@@ -564,6 +573,33 @@ class Help(Resource):
                     subm.value = this.method_name;
                     subm.className = 'submit';
                     parent.appendChild(subm);
+
+                    var that = this;
+                    var create_field = document.createElement('a');
+                    create_field.href = '#';
+                    create_field.className = 'add_input';
+                    create_field.innerHTML = 'Add parameter';
+                    create_field.onclick = function() {
+                        var name = prompt("Enter a field name:");
+                        if (name !== null) {
+                            that.create_form_field(that.input_container, 'param', 'text', name);
+                        }
+                        return false;
+                    };
+                    parent.appendChild(create_field);
+
+                    var create_header = document.createElement('a');
+                    create_header.href = '#';
+                    create_header.className = 'add_input';
+                    create_header.innerHTML = 'Add header';
+                    create_header.onclick = function() {
+                        var name = prompt("Enter a header name:");
+                        if (name !== null) {
+                            that.create_form_field(that.input_container, 'header', 'text', name);
+                        }
+                        return false;
+                    };
+                    parent.appendChild(create_header);
                 };
                 pr.create_result_field = function(parent) {
                     this.result_node = document.createElement('div');

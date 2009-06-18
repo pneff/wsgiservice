@@ -393,6 +393,7 @@ class Help(Resource):
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
         if method_params:
             method_params.pop(0) # pop the self off
+        self._add_path_parameters(method_params, res, method)
         retval = {}
         for param in method_params:
             is_path_param = '{' + param + '}' in res._path
@@ -407,6 +408,14 @@ class Help(Resource):
                 retval[param]['validate_re'] = validation['re']
                 retval[param]['desc'] = validation['doc'] or ''
         return retval
+
+    def _add_path_parameters(self, method_params, res, method):
+        """Extract all path parameters as they are always required even
+        though some methods may not have them in their definition.
+        """
+        for param in re.findall('{([^}]+)}', res._path):
+            if param not in method_params:
+                method_params.append(param)
 
     def _get_xml_value(self, value):
         """Treat arrays better."""

@@ -72,6 +72,7 @@ class Users(Resource):
 @validate('email', doc="User's email. This is the unique identifier of a user.")
 @validate('password', doc="User's password.")
 class UserEmailView(Resource):
+    """Authenticate users."""
     @expires(timedelta(hours=4))
     def POST(self, email, password, request):
         """Checks if the given user/password combination is correct. Returns

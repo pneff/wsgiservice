@@ -362,6 +362,7 @@ class Help(Resource):
         for res in self.application._resources:
             retval.append({
                 'name': res.__name__,
+                'desc': self._get_doc(res),
                 'properties': {
                     'XML_ROOT_TAG': res.XML_ROOT_TAG,
                     'KNOWN_METHODS': res.KNOWN_METHODS,
@@ -383,10 +384,17 @@ class Help(Resource):
         for method_name in methods:
             method = getattr(res, method_name)
             retval[method_name] = {
-                'desc': method.__doc__.strip(),
+                'desc': self._get_doc(method),
                 'parameters': self._get_parameters(res, method)
             }
         return retval
+    
+    def _get_doc(self, obj):
+        doc = obj.__doc__
+        if doc:
+            return doc.strip()
+        else:
+            return ''
     
     def _get_parameters(self, res, method):
         """Return a parameters dictionary for the given resource/method."""
@@ -427,7 +435,7 @@ class Help(Resource):
                 retval.append('</resource>')
             return "".join(retval)
         else:
-            return wsgiservice.Resource._get_xml_value(self, value)
+            return Resource._get_xml_value(self, value)
 
     def to_text_html(self, raw):
         """Returns the HTML string version of the given raw Python object.
@@ -805,10 +813,11 @@ class Help(Resource):
     def to_text_html_overview(self, retval, raw):
         """Add the overview table to the HTML output."""
         retval.append('<table id="overview">')
-        retval.append('<tr><th>Resource</th><th>Path</th></tr>')
+        retval.append('<tr><th>Resource</th><th>Path</th><th>Description</th></tr>')
         for resource in raw:
-            retval.append('<tr><td><a href="#{0}">{0}</a></td><td>{1}</td></tr>'.format(
-                xml_escape(resource['name']), xml_escape(resource['path'])))
+            retval.append('<tr><td><a href="#{0}">{0}</a></td><td>{1}</td><td>{2}</td></tr>'.format(
+                xml_escape(resource['name']), xml_escape(resource['path']),
+                xml_escape(resource['desc'])))
         retval.append('</table>')
 
     def to_text_html_resources(self, retval, raw):
@@ -817,6 +826,8 @@ class Help(Resource):
             retval.append('<div class="resource_details">')
             retval.append('<h2 id="{0}">{0}</h2>'.format(
                 xml_escape(resource['name'])))
+            if resource['desc']:
+                retval.append('<p class="desc">{0}</p>'.format(xml_escape(resource['desc'])))
             retval.append('<table class="config">')
             retval.append('<tr><th>Path</th><td>{0}</td>'.format(xml_escape(
                 resource['path'])))

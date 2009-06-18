@@ -370,7 +370,7 @@ class Help(Resource):
                     'NOT_FOUND': [ex.__name__ for ex in res.NOT_FOUND],
                 },
                 'methods': self._get_methods(res),
-                'path': res._path,
+                'path': self.request.script_name + res._path,
             })
         return retval
 

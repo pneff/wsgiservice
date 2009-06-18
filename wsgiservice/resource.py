@@ -347,7 +347,7 @@ class Resource(object):
 
 
 
-@mount('/_internal/docs')
+@mount('/_internal/help')
 class Help(Resource):
     EXTENSION_MAP = {
         '.xml': 'text/xml',

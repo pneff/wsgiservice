@@ -516,49 +516,46 @@ class Help(Resource):
                 };
                 pr.create_form_params = function(parent) {
                     for (param in this.method.parameters) {
-                        var param_id = 'param_' + this.resource['name'] + '_' + this.method_name + '_' + param;
-                        var d = document.createElement('div');
-                        d.className = 'param';
-                        d.id = param_id;
-
-                        var input_id = param_id + '_input';
-                        var lbl = document.createElement('label');
-                        lbl.innerHTML = param;
-                        lbl.setAttribute('for', input_id);
-                        d.appendChild(lbl);
-
-                        var input = document.createElement('input');
-                        input.id = input_id;
-                        input.type = 'text';
-                        input.name = param;
-                        d.appendChild(input);
-
-                        parent.appendChild(d);
+                        this.create_form_field(parent, 'param', 'text', param);
                     }
 
-                    // Add drop-down for request-type
-                    var d = document.createElement('div');
-                    d.className = 'header';
-
-                    var extid = 'header_' + this.resource['name'] + '_' + this.method_name + '_accept';
-                    var lbl = document.createElement('label');
-                    lbl.innerHTML = 'Accept (header)';
-                    lbl.setAttribute('for', extid);
-                    d.appendChild(lbl);
-
-                    var select = document.createElement('select');
-                    select.name = 'Accept';
-                    select.id = extid;
-                    d.appendChild(select);
-
+                    // Accept header
+                    var mimes = [];
                     var emap = this.resource.properties.EXTENSION_MAP;
                     for (extension in emap) {
-                        var option = document.createElement('option');
-                        option.value = emap[extension];
-                        option.innerHTML = this.format(emap[extension]);
-                        option.id = extid;
-                        select.appendChild(option);
+                        mimes.push(emap[extension]);
                     }
+                    this.create_form_field(parent, 'header', 'select', 'Accept', mimes);
+                };
+                pr.create_form_field = function(parent, type, field_type, name, options) {
+                    var id = type + '_' + this.resource['name'] + '_' + this.method_name + '_' + name;
+                    var d = document.createElement('div');
+                    d.className = type;
+                    d.id = id;
+
+                    var input_id = id + '_input';
+                    var lbl = document.createElement('label');
+                    lbl.innerHTML = name;
+                    lbl.setAttribute('for', input_id);
+                    d.appendChild(lbl);
+
+                    var field = null;
+                    if (field_type == 'select') {
+                        field = document.createElement('select');
+                        for (var i = 0; i < options.length; i++) {
+                            var option = document.createElement('option');
+                            option.value = options[i];
+                            option.innerHTML = this.format(options[i]);
+                            field.appendChild(option);
+                        }
+                    } else {
+                        field = document.createElement('input');
+                        field.type = 'text';
+                    }
+                    field.id = input_id;
+                    field.name = name;
+                    d.appendChild(field);
+
                     parent.appendChild(d);
                 };
                 pr.create_form_buttons = function(parent) {

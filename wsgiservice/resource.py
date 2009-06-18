@@ -6,6 +6,7 @@ import webob
 import re
 from xml.sax.saxutils import escape as xml_escape
 from wsgiservice.status import *
+from wsgiservice.decorators import mount
 from wsgiservice.exceptions import ValidationException
 
 logger = logging.getLogger(__name__)
@@ -39,10 +40,11 @@ class Resource(object):
     }
     NOT_FOUND = ()
 
-    def __init__(self, request, response, path_params):
+    def __init__(self, request, response, path_params, application=None):
         self.request = request
         self.response = response
         self.path_params = path_params
+        self.application = application
     
     def OPTIONS(self):
         """Default implementation of the OPTIONS verb. Outputs a list of
@@ -342,3 +344,167 @@ class Resource(object):
         logger.exception("A 404 Not Found exception occured while handling the request.")
         self.response.body_raw = {'error': 'Not Found'}
         self.response.status = 404
+
+
+
+@mount('/_internal/docs')
+class Help(Resource):
+    EXTENSION_MAP = {
+        '.xml': 'text/xml',
+        '.json': 'application/json',
+        '.html': 'text/html',
+    }
+    XML_ROOT_TAG = 'help'
+
+    def GET(self):
+        "Returns documentation for the application."
+        retval = []
+        for res in self.application._resources:
+            retval.append({
+                'name': res.__name__,
+                'properties': {
+                    'XML_ROOT_TAG': res.XML_ROOT_TAG,
+                    'KNOWN_METHODS': res.KNOWN_METHODS,
+                    'EXTENSION_MAP': dict((key[1:], value) for key, value
+                        in res.EXTENSION_MAP.iteritems()),
+                    'NOT_FOUND': [ex.__name__ for ex in res.NOT_FOUND],
+                },
+                'methods': self._get_methods(res),
+                'path': res._path,
+            })
+        return retval
+
+    def _get_methods(self, res):
+        """Return a dictionary of method descriptions for the given resource.
+        """
+        retval = {}
+        instance = res(None, None, None)
+        methods = [m.strip() for m in instance.get_allowed_methods().split(',')]
+        for method_name in methods:
+            method = getattr(res, method_name)
+            retval[method_name] = {
+                'desc': method.__doc__.strip(),
+                'parameters': self._get_parameters(res, method)
+            }
+        return retval
+    
+    def _get_parameters(self, res, method):
+        """Return a parameters dictionary for the given resource/method."""
+        method_params, varargs, varkw, defaults = inspect.getargspec(method)
+        if method_params:
+            method_params.pop(0) # pop the self off
+        retval = {}
+        for param in method_params:
+            is_path_param = '{' + param + '}' in res._path
+            retval[param] = {
+                'path_param': is_path_param,
+                'mandatory': is_path_param,
+                'validate_re': None,
+                'desc': '',
+            }
+            validation = self._get_validation(method, param)
+            if validation:
+                retval[param]['validate_re'] = validation['re']
+                retval[param]['desc'] = validation['doc'] or ''
+        return retval
+
+    def _get_xml_value(self, value):
+        """Treat arrays better."""
+        if isinstance(value, list):
+            retval = []
+            for key, value in enumerate(value):
+                retval.append('<resource>')
+                retval.append(self._get_xml_value(value))
+                retval.append('</resource>')
+            return "".join(retval)
+        else:
+            return wsgiservice.Resource._get_xml_value(self, value)
+
+    def to_text_html(self, raw):
+        """Returns the HTML string version of the given raw Python object.
+        Hard-coded to return a nicely-presented service information document.
+        
+        :param raw: The return value of the resource method.
+        :type raw: Any valid Python object
+        :rtype: string
+        """
+        retval = ["""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+            <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+            <head>
+                <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+                <title>Help Example</title>
+                <style>
+                    /* YUI reset.css */
+                    html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,button,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,img{border:0;}address,caption,cite,code,dfn,em,strong,th,var,optgroup{font-style:inherit;font-weight:inherit;}del,ins{text-decoration:none;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym{border:0;font-variant:normal;}sup{vertical-align:baseline;}sub{vertical-align:baseline;}legend{color:#000;}input,button,textarea,select,optgroup,option{font-family:inherit;font-size:inherit;font-style:inherit;font-weight:inherit;}input,button,textarea,select{*font-size:100%;}
+                    /* YUI fonts.css */
+                    body{font:13px/1.231 arial,helvetica,clean,sans-serif;*font-size:small;*font:x-small;}select,input,button,textarea,button{font:99% arial,helvetica,clean,sans-serif;}table{font-size:inherit;font:100%;}pre,code,kbd,samp,tt{font-family:monospace;*font-size:108%;line-height:100%;}
+                    /* YUI base.css */
+                    body{margin:10px;}h1{font-size:138.5%;}h2{font-size:123.1%;}h3{font-size:108%;}h1,h2,h3{margin:1em 0;}h1,h2,h3,h4,h5,h6,strong,dt{font-weight:bold;}optgroup{font-weight:normal;}abbr,acronym{border-bottom:1px dotted #000;cursor:help;}em{font-style:italic;}del{text-decoration:line-through;}blockquote,ul,ol,dl{margin:1em;}ol,ul,dl{margin-left:2em;}ol li{list-style:decimal outside;}ul li{list-style:disc outside;}dl dd{margin-left:1em;}th,td{border:1px solid #000;padding:.5em;}th{font-weight:bold;text-align:center;}caption{margin-bottom:.5em;text-align:center;}sup{vertical-align:super;}sub{vertical-align:sub;}p,fieldset,table,pre{margin-bottom:1em;}button,input[type="checkbox"],input[type="radio"],input[type="reset"],input[type="submit"]{padding:1px;}
+
+                    h2 {margin-top: 0;}
+                    .resource_details {padding-top: 2em;border-top: 1px dotted #ccc;margin-top: 2em;}
+                    .method_details {margin-left: 2em;}
+                </style>
+            </head>
+            <body>
+                <h1>WsgiService help</h1>
+        """]
+        self.to_text_html_overview(retval, raw)
+        self.to_text_html_resources(retval, raw)
+        retval.append('</body></html>')
+        return re.compile('^ *', re.MULTILINE).sub('', "".join(retval))
+
+    def to_text_html_overview(self, retval, raw):
+        """Add the overview table to the HTML output."""
+        retval.append('<table id="overview">')
+        retval.append('<tr><th>Resource</th><th>Path</th></tr>')
+        for resource in raw:
+            retval.append('<tr><td><a href="#{0}">{0}</a></td><td>{1}</td></tr>'.format(
+                xml_escape(resource['name']), xml_escape(resource['path'])))
+        retval.append('</table>')
+
+    def to_text_html_resources(self, retval, raw):
+        """Add the resources details to the HTML output."""
+        for resource in raw:
+            retval.append('<div class="resource_details">')
+            retval.append('<h2 id="{0}">{0}</h2>'.format(
+                xml_escape(resource['name'])))
+            retval.append('<table class="config">')
+            retval.append('<tr><th>Path</th><td>{0}</td>'.format(xml_escape(
+                resource['path'])))
+            representations = [value + ' (.' + key + ')' for key, value
+                in resource['properties']['EXTENSION_MAP'].iteritems()]
+            retval.append('<tr><th>Representations</th><td>{0}</td>'.format(
+                xml_escape(', '.join(representations))))
+            retval.append('</table>')
+            self.to_text_html_methods(retval, resource)
+            retval.append('</div>')
+    
+    def to_text_html_methods(self, retval, resource):
+        """Add the methods of this resource to the HTML output."""
+        for method_name, method in resource['methods'].iteritems():
+            retval.append('<div class="method_details">')
+            retval.append('<h3 id="{0}_{1}">{1}</h3>'.format(
+                xml_escape(resource['name']), xml_escape(method_name)))
+            if method['desc']:
+                retval.append('<p class="desc">{0}</p>'.format(xml_escape(method['desc'])))
+            if method['parameters']:
+                retval.append('<table class="parameters">')
+                retval.append('<tr><th>Name</th><th>Mandatory</th><th>Description</th><th>Validation</th>')
+                for param_name, param in method['parameters'].iteritems():
+                    mandatory = '-'
+                    description = param['desc']
+                    validation = ''
+                    if param['mandatory']:
+                        mandatory = 'Yes'
+                    if param['path_param']:
+                        mandatory += ' (Path parameter)'
+                    if param['validate_re']:
+                        validation = 'Regular expression: <tt>' + \
+                            xml_escape(param['validate_re']) + '</tt>'
+                    retval.append('<tr><td>{0}</td><td>{1}</td><td>{2}</td>'
+                        '<td>{3}</td>'.format(xml_escape(param_name),
+                        xml_escape(mandatory), xml_escape(description), validation))
+                retval.append('</table>')
+            retval.append('</div>')

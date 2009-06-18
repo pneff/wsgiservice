@@ -2,6 +2,7 @@
 import logging
 import webob
 import wsgiservice
+import wsgiservice.resource
 
 logger = logging.getLogger(__name__)
 
@@ -65,13 +66,14 @@ class Application(object):
             response.status = 404
             return response
         path_params, resource = parsed
-        response = resource(request, response, path_params).call()
+        instance = resource(request, response, path_params, self)
+        response = instance.call()
         if request.method == 'HEAD':
             response.body = ''
         return response
 
 
-def get_app(defs):
+def get_app(defs, add_help=True):
     """Small wrapper function to returns an instance of :class:`Application`
     which serves the objects in the defs. Usually this is called with return
     value globals() from the module where the resources are defined. The
@@ -82,7 +84,12 @@ def get_app(defs):
                  of this dictionary is used as application resource. The other
                  values are discarded.
     :type defs: dict
+    :param add_help: Wether to add the Help resource which will expose the
+                     documentation of this service at /_internal/help
+    :type add_help: boolean
     :rtype: :class:`Application`
     """
     resources = [d for d in defs.values() if d in wsgiservice.Resource.__subclasses__()]
+    if add_help:
+        resources.append(wsgiservice.resource.Help)
     return Application(resources)

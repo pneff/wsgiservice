@@ -473,6 +473,11 @@ class Help(Resource):
                     a.add_input {
                         margin: 0.5em;
                     }
+                    .hidden { display: none !important; }
+                    a.toggle_details {
+                        margin-bottom: 1em;
+                        display: block;
+                    }
                 </style>
                 <script>
                 /**
@@ -744,6 +749,39 @@ class Help(Resource):
                     }
                     return params;
                 };
+
+                /* Hides all .resource_details elements and inserts a toggle link at their
+                   place. */
+                function toggle_visibility() {
+                    var divs = document.getElementsByTagName('div');
+                    var len = divs.length;
+                    for (var i = 0; i < len; i++) {
+                        var div = divs[i];
+                        if (div.className == 'method_details') {
+                            toggle_visibility_div(div);
+                        }
+                    }
+                }
+
+                function toggle_visibility_div(div) {
+                    div.className += ' hidden';
+                    var link = document.createElement('a');
+                    link.innerHTML = 'Show details';
+                    link.href = '#';
+                    link.className = 'toggle_details';
+                    link.onclick = function() {
+                        console.debug(div);
+                        if (link.innerHTML == 'Show details') {
+                            div.className = div.className.replace(' hidden', '');
+                            link.innerHTML = 'Hide details';
+                        } else {
+                            div.className += ' hidden';
+                            link.innerHTML = 'Show details';
+                        }
+                        return false;
+                    };
+                    div.parentNode.insertBefore(link, div);
+                }
                 </script>
             </head>
             <body>
@@ -751,6 +789,7 @@ class Help(Resource):
         """]
         self.to_text_html_overview(retval, raw)
         self.to_text_html_resources(retval, raw)
+        retval.append('<script>toggle_visibility();</script>')
         retval.append('</body></html>')
         return re.compile('^ *', re.MULTILINE).sub('', "".join(retval))
 
@@ -783,9 +822,9 @@ class Help(Resource):
     def to_text_html_methods(self, retval, resource):
         """Add the methods of this resource to the HTML output."""
         for method_name, method in resource['methods'].iteritems():
-            retval.append('<div class="method_details" id="{0}_{1}_container">'.format(
-                xml_escape(resource['name']), xml_escape(method_name)))
             retval.append('<h3 id="{0}_{1}">{1}</h3>'.format(
+                xml_escape(resource['name']), xml_escape(method_name)))
+            retval.append('<div class="method_details" id="{0}_{1}_container">'.format(
                 xml_escape(resource['name']), xml_escape(method_name)))
             if method['desc']:
                 retval.append('<p class="desc">{0}</p>'.format(xml_escape(method['desc'])))

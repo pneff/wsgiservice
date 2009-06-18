@@ -243,18 +243,25 @@ class Resource(object):
         dictionaries are written by the decorator
         :func:`wsgiservice.decorators.validate`.
         """
-        rules = None
-        if hasattr(method, '_validations') and param in method._validations:
-            rules = method._validations[param]
-        elif hasattr(method.im_class, '_validations') and param in method.im_class._validations:
-            rules = method.im_class._validations[param]
-        else:
+        rules = self._get_validation(method, param)
+        if not rules:
             return
         if value is None or len(value) == 0:
             raise ValidationException("Value for {0} must not be empty.".format(param))
         elif 're' in rules and rules['re']:
             if not re.search('^' + rules['re'] + '$', value):
                 raise ValidationException("{0} value {1} does not validate.".format(param, value))
+    
+    def _get_validation(self, method, param):
+        """Return the correct validations dictionary for this parameter or
+        None.
+        """
+        if hasattr(method, '_validations') and param in method._validations:
+            return method._validations[param]
+        elif hasattr(method.im_class, '_validations') and param in method.im_class._validations:
+            return method.im_class._validations[param]
+        else:
+            return None
     
     def convert_response(self):
         """Finish filling the instance's response object so it's ready to be

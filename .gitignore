@@ -5,3 +5,5 @@
 others/
 docs/_build/
 .env/
+build/
+dist/

@@ -10,8 +10,9 @@ import wsgiservice.exceptions
 def test_getapp():
     app = wsgiservice.get_app(globals())
     print app
+    print app._resources
     assert isinstance(app, wsgiservice.application.Application)
-    assert len(app._resources) == 6
+    assert len(app._resources) == 7
     resources = (Resource1, Resource2, Resource3, Resource4, Resource5,
         Resource6)
     assert app._resources[0] in resources

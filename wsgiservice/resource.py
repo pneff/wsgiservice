@@ -388,7 +388,7 @@ class Help(Resource):
         """Return a dictionary of method descriptions for the given resource.
         """
         retval = {}
-        instance = res(None, None, None)
+        instance = res(webob.Request.blank('/'), webob.Response(), {})
         methods = [m.strip() for m in instance.get_allowed_methods().split(',')]
         for method_name in methods:
             method = getattr(res, method_name)

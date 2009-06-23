@@ -1,4 +1,5 @@
 """Components responsible for building the WSGI application."""
+import inspect
 import logging
 import webob
 import wsgiservice
@@ -89,8 +90,8 @@ def get_app(defs, add_help=True):
     :type add_help: boolean
     :rtype: :class:`Application`
     """
-    resources = [d for d in defs.values()
-        if d in wsgiservice.Resource.__subclasses__() and hasattr(d, '_path')]
+    resources = [d for d in defs.values() if inspect.isclass(d) and
+        issubclass(d, wsgiservice.Resource) and hasattr(d, '_path')]
     if add_help:
         resources.append(wsgiservice.resource.Help)
     return Application(resources)

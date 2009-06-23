@@ -420,7 +420,7 @@ class Resource2(wsgiservice.Resource):
     def PUT(self):
         wsgiservice.raise_201(self, 'foo')
 
-class Resource3(wsgiservice.Resource):
+class Resource3(AbstractResource):
     _path = '/res3'
     @wsgiservice.expires(timedelta(days=1))
     def GET(self, id):

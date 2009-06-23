@@ -244,6 +244,9 @@ class Resource(object):
         _validations dictionary of either the method or the instance. This
         dictionaries are written by the decorator
         :func:`wsgiservice.decorators.validate`.
+        
+        .. todo:: If the parameter has a default value then don't require a
+                  value to be specified.
         """
         rules = self._get_validation(method, param)
         if not rules:
@@ -349,6 +352,12 @@ class Resource(object):
 
 @mount('/_internal/help')
 class Help(Resource):
+    """Provides documentation for all resources of the current application.
+    
+    .. todo:: Allow documentation of output.
+    .. todo:: Use first sentence of docstring for summary, add bigger version
+              at the bottom.
+    """
     EXTENSION_MAP = {
         '.xml': 'text/xml',
         '.json': 'application/json',
@@ -444,6 +453,8 @@ class Help(Resource):
         :param raw: The return value of the resource method.
         :type raw: Any valid Python object
         :rtype: string
+
+        .. todo:: Treat pragraphs and/or newlines better in output.
         """
         retval = ["""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
                         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">

@@ -3,7 +3,7 @@ the documents. This is currently a dummy implementation with ony in-memory
 storage."""
 
 import uuid
-import wsgiservice
+from wsgiservice import *
 import logging
 import sys
 
@@ -12,9 +12,9 @@ logging.basicConfig(level=logging.DEBUG, stream=sys.stderr)
 
 data = {}
 
-@wsgiservice.mount('/{id}')
-@wsgiservice.validate('id', re=r'[-0-9a-zA-Z]{36}', doc='User ID, must be a valid UUID.')
-class Document(wsgiservice.Resource):
+@mount('/{id}')
+@validate('id', re=r'[-0-9a-zA-Z]{36}', doc='User ID, must be a valid UUID.')
+class Document(Resource):
     NOT_FOUND = (KeyError,)
 
     def GET(self, id):
@@ -33,17 +33,17 @@ class Document(wsgiservice.Resource):
         "Delete the document indicated by the ID."
         del data[id]
 
-@wsgiservice.mount('/')
-class Documents(wsgiservice.Resource):
+@mount('/')
+class Documents(Resource):
     def POST(self):
         """Create a new document, assigning a unique ID. Parameters are
         passed in as key/value pairs in the POST data."""
         id = str(uuid.uuid4())
         res = Document(self.request, self.response, self.path_params)
         self.response.body_raw = res.PUT(id)
-        wsgiservice.raise_201(self, id)
+        raise_201(self, id)
 
-app = wsgiservice.get_app(globals())
+app = get_app(globals())
 
 if __name__ == '__main__':
     from wsgiref.simple_server import make_server

@@ -247,6 +247,7 @@ class Resource(object):
         
         .. todo:: If the parameter has a default value then don't require a
                   value to be specified.
+        .. todo:: Allow validation by type (e.g. header, post, query, etc.)
         """
         rules = self._get_validation(method, param)
         if not rules:

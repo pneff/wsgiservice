@@ -400,6 +400,10 @@ def test_notfound_xml():
     assert res.body == '<response><error>Not Found</error></response>'
 
 
+class AbstractResource(wsgiservice.Resource):
+    """This resource should not be added to the application as it doesn't
+    have a path."""
+
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'
     _validations = {'id': {'re': '[a-z]{5}'}}

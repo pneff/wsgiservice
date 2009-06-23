@@ -89,7 +89,8 @@ def get_app(defs, add_help=True):
     :type add_help: boolean
     :rtype: :class:`Application`
     """
-    resources = [d for d in defs.values() if d in wsgiservice.Resource.__subclasses__()]
+    resources = [d for d in defs.values()
+        if d in wsgiservice.Resource.__subclasses__() and hasattr(d, '_path')]
     if add_help:
         resources.append(wsgiservice.resource.Help)
     return Application(resources)

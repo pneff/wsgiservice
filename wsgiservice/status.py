@@ -130,12 +130,14 @@ def raise_400(instance, msg=None):
         instance.response.body_raw = {'error': msg}
     raise ResponseException(instance.response)
 
-def raise_401(instance, msg=None):
+def raise_401(instance, authenticate, msg=None):
     """Abort the current request with a 401 (Unauthorized) response code. If
     the message is given it's output as an error message in the response body
-    (correctly converted to the requested MIME type).
+    (correctly converted to the requested MIME type). Outputs the
+    WWW-Authenticate header as given by the authenticate parameter.
     """
     instance.response.status = 401
+    instance.response.headers['WWW-Authenticate'] = authenticate
     if msg:
         instance.response.body_raw = {'error': msg}
     raise ResponseException(instance.response)

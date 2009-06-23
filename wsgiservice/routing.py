@@ -39,7 +39,7 @@ class Router(object):
                 prev_pos = match.end()
             regexp += re.escape(path[prev_pos:])
             # Allow an extension to overwrite the mime type
-            extensions = "|".join(wsgiservice.Response._extension_map.keys())
+            extensions = "|".join(['.xml', '.json'])
             regexp += '(?P<_extension>' + extensions + ')?$'
             routes.append((re.compile(regexp).match, resource))
         return routes

@@ -64,7 +64,7 @@ class Users(Resource):
         """Create a new document, assigning a unique ID. Parameters are
         passed in as key/value pairs in the POST data."""
         id = str(uuid.uuid4())
-        res = User(self.request, self.response, self.path_params)
+        res = self.get_resource(User)
         self.response.body_raw = res.PUT(id, email, password)
         raise_201(self, id)
 

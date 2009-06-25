@@ -41,6 +41,9 @@ class Resource(object):
     NOT_FOUND = ()
 
     def __init__(self, request, response, path_params, application=None):
+        """Constructor. Order of the parameters is not guarantteed, always
+        used named parameters.
+        """
         self.request = request
         self.response = response
         self.path_params = path_params
@@ -78,6 +81,14 @@ class Resource(object):
             self.handle_exception(e)
         self.convert_response()
         return self.response
+    
+    def get_resource(self, resource, **kwargs):
+        """Returns a new instance of the resource class passed in as resource.
+        This is a helper to make future-compatibility easier when new
+        arguments get added to the constructor."""
+        return resource(request=self.request, response=self.response,
+            path_params=self.path_params, application=self.application,
+            **kwargs)
     
     def get_method(self, method=None):
         """Returns the method to call on this instance as a string. Raises a
@@ -389,7 +400,8 @@ class Help(Resource):
         """Return a dictionary of method descriptions for the given resource.
         """
         retval = {}
-        instance = res(webob.Request.blank('/'), webob.Response(), {})
+        instance = res(request=webob.Request.blank('/'),
+            response=webob.Response(), path_params={})
         methods = [m.strip() for m in instance.get_allowed_methods().split(',')]
         for method_name in methods:
             method = getattr(res, method_name)

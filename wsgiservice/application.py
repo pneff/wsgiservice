@@ -67,7 +67,8 @@ class Application(object):
             response.status = 404
             return response
         path_params, resource = parsed
-        instance = resource(request, response, path_params, self)
+        instance = resource(request=request, response=response,
+            path_params=path_params, application=self)
         response = instance.call()
         if request.method == 'HEAD':
             response.body = ''

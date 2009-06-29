@@ -89,6 +89,7 @@ def test_default_value_validate():
     usr = User(request=req, response=res, path_params={})
     res = usr()
     print res
+    assert res.status_int == 400
     obj = json.loads(res.body)
     print obj
     assert obj == {"error": "Value for id must not be empty."}

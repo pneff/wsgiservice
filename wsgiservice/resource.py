@@ -77,6 +77,8 @@ class Resource(object):
             self.response = e.response
         except self.NOT_FOUND, e:
             self.handle_exception_404(e)
+        except ValidationException, e:
+            self.handle_exception(e, status=400)
         except Exception, e:
             self.handle_exception(e)
         self.convert_response()
@@ -349,13 +351,13 @@ class Resource(object):
             retval.append(xml_escape(str(value)))
         return "".join(retval)
     
-    def handle_exception(self, e):
+    def handle_exception(self, e, status=500):
         """Handles the given exception: logs the exception, sets the response
         code to 500 and outputs the exception message as an error message.
         """
-        logger.exception("An exception occured while handling the request.")
+        logger.exception("An exception occured while handling the request: %s", e)
         self.response.body_raw = {'error': str(e)}
-        self.response.status = 500
+        self.response.status = status
     
     def handle_exception_404(self, e):
         """Handles the given exception: logs the exception, sets the response

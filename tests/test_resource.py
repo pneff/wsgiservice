@@ -1,3 +1,5 @@
+import json
+import webob
 import wsgiservice
 
 def test_mount():
@@ -34,3 +36,59 @@ def test_serialisation_bool():
     s = u.to_text_xml(True)
     print s
     assert s == '<response>true</response>'
+
+def test_default_value():
+    class User(wsgiservice.Resource):
+        def GET(self, foo, id=5):
+            return {'id': id, 'foo': foo}
+    req = webob.Request.blank('/?foo=bar', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    obj = json.loads(res.body)
+    print obj
+    assert obj == {'id': 5, 'foo': 'bar'}
+
+def test_default_value_overwrite():
+    class User(wsgiservice.Resource):
+        def GET(self, foo, id=5):
+            return {'id': id, 'foo': foo}
+    req = webob.Request.blank('/?id=8&foo=bar', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    obj = json.loads(res.body)
+    print obj
+    assert obj == {'id': '8', 'foo': 'bar'}
+
+def test_default_value_validate_novalue():
+    """Make sure default params are validated correctly when not passed in."""
+    class User(wsgiservice.Resource):
+        @wsgiservice.validate('id', doc='Foo')
+        def GET(self, foo, id=5):
+            return {'id': id, 'foo': foo}
+    req = webob.Request.blank('/?foo=bar', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    obj = json.loads(res.body)
+    print obj
+    assert obj == {'id': 5, 'foo': 'bar'}
+
+def test_default_value_validate():
+    """Make sure default params are validated correctly when passed in."""
+    class User(wsgiservice.Resource):
+        @wsgiservice.validate('id', doc='Foo')
+        def GET(self, foo, id=5):
+            return {'id': id, 'foo': foo}
+    req = webob.Request.blank('/?id=&foo=bar', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    obj = json.loads(res.body)
+    print obj
+    assert obj == {"error": "Value for id must not be empty."}

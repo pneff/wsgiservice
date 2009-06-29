@@ -237,6 +237,9 @@ class Resource(object):
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
         if method_params:
             method_params.pop(0) # pop the self off
+        optional_args = []
+        if defaults:
+            optional_args = method_params[len(defaults):]
         params = []
         for param in method_params:
             value = None
@@ -246,6 +249,8 @@ class Resource(object):
                 value = self.request.GET[param]
             elif param in self.request.POST:
                 value = self.request.POST[param]
+            elif param in optional_args:
+                value = defaults[optional_args.index(param)]
             self.validate_param(method, param, value)
             params.append(value)
         return method(*params)
@@ -263,7 +268,7 @@ class Resource(object):
         rules = self._get_validation(method, param)
         if not rules:
             return
-        if value is None or len(value) == 0:
+        if value is None or len(str(value)) == 0:
             raise ValidationException("Value for {0} must not be empty.".format(param))
         elif 're' in rules and rules['re']:
             if not re.search('^' + rules['re'] + '$', value):

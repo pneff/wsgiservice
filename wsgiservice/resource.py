@@ -30,6 +30,9 @@ class Resource(object):
         ideal candidate is KeyError if you do dictionary accesses. Used by
         :func:`call` which calls :func:`handle_exception_404` whenever an
         exception from this tuple occurs. (Default: Empty tuple)
+    :var IGNORED_PATHS: A tuple of absolute paths that should return a 404.
+        By default this is used to ignored requests for favicon.ico and
+        robots.txt so that browsers don't cause too many exceptions.
     """
     XML_ROOT_TAG = 'response'
     KNOWN_METHODS = ['OPTIONS', 'GET', 'HEAD', 'POST', 'PUT', 'DELETE',
@@ -39,6 +42,7 @@ class Resource(object):
         '.json': 'application/json'
     }
     NOT_FOUND = ()
+    IGNORED_PATHS = ('/favicon.ico', '/robots.txt')
 
     def __init__(self, request, response, path_params, application=None):
         """Constructor. Order of the parameters is not guarantteed, always
@@ -70,6 +74,7 @@ class Resource(object):
         self.type = self.get_content_type()
         try:
             self.method = self.get_method()
+            self.handle_ignored_resources()
             self.assert_conditions()
             self.response.body_raw = self.call_method(self.method)
         except ResponseException, e:
@@ -127,6 +132,11 @@ class Resource(object):
             else:
                 self.response.vary.append('Accept')
             return self.request.accept.first_match(self.EXTENSION_MAP.values())
+    
+    def handle_ignored_resources(self):
+        """Ignore robots.txt and favicon.ico GET requests."""
+        if self.method in ('GET', 'HEAD') and self.request.path_qs in (self.IGNORED_PATHS):
+            raise_404(self)
     
     def assert_conditions(self):
         """Handles various HTTP conditions and raises HTTP exceptions to

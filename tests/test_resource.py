@@ -93,3 +93,86 @@ def test_default_value_validate():
     obj = json.loads(res.body)
     print obj
     assert obj == {"error": "Value for id must not be empty."}
+
+
+def test_ignore_robotstxt():
+    """Ignore the robots.txt resource on root resources."""
+    class Dummy(wsgiservice.Resource):
+        _path = '/{id}'
+        def GET(self, id):
+            return id
+    req = webob.Request.blank('/robots.txt')
+    res = webob.Response()
+    usr = Dummy(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 404
+
+def test_ignore_favicon():
+    """Ignore the favicon.ico resource on root resources."""
+    class Dummy(wsgiservice.Resource):
+        _path = '/{id}'
+        def GET(self, id):
+            return id
+    req = webob.Request.blank('/favicon.ico')
+    res = webob.Response()
+    usr = Dummy(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 404
+
+def test_ignore_favicon_overwrite():
+    """Don't ignore favicon.ico when IGNORE_BROWSER_RESOURCES is set to False.
+    """
+    class Dummy(wsgiservice.Resource):
+        _path = '/{id}'
+        IGNORED_PATHS = ()
+        def GET(self, id):
+            return id
+    req = webob.Request.blank('/favicon.ico')
+    res = webob.Response()
+    usr = Dummy(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 200
+
+def test_ignore_favicon_not_root():
+    """Don't ignore favicon.ico on non-root requests."""
+    class Dummy(wsgiservice.Resource):
+        _path = '/foo/{id}'
+        def GET(self, id):
+            return id
+    req = webob.Request.blank('/foo/favicon.ico')
+    res = webob.Response()
+    usr = Dummy(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 200
+
+def test_ignore_favicon_query_param():
+    """Don't ignore favicon.ico with query parameters"""
+    class Dummy(wsgiservice.Resource):
+        _path = '/{id}'
+        def GET(self, id):
+            return id
+    req = webob.Request.blank('/favicon.ico?x=1')
+    res = webob.Response()
+    usr = Dummy(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 200
+
+def test_ignore_favicon_post():
+    """Only ignore favicon.ico for GET requests."""
+    class Dummy(wsgiservice.Resource):
+        _path = '/{id}'
+        def GET(self, id):
+            return id
+        def POST(self, id):
+            return id
+    req = webob.Request.blank('/favicon.ico?', {'REQUEST_METHOD': 'POST'})
+    res = webob.Response()
+    usr = Dummy(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 200

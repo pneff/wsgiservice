@@ -60,14 +60,42 @@ def test_two_resources_priorities_large():
     assert retval[0]['_extension'] is None
     assert retval[1] is DummyResource3, retval[1]
 
-class DummyResource1(object):
+def test_custom_extension():
+    router = wsgiservice.routing.Router([DummyResource3])
+    retval = router('/foo/anything/else.txt')
+    print retval
+    assert retval is not None
+    assert retval[0]['_extension'] == '.txt'
+    assert retval[1] is DummyResource3
+
+def test_custom_extension_multiple():
+    router = wsgiservice.routing.Router([DummyResource2, DummyResource3])
+    retval = router('/foo/anything/else.txt')
+    print retval
+    assert retval is not None
+    assert retval[0]['_extension'] == '.txt'
+    assert retval[1] is DummyResource3
+
+def test_custom_extension_per_resource():
+    router = wsgiservice.routing.Router([DummyResource2, DummyResource3])
+    retval = router('/foo/bar.txt')
+    print retval
+    assert retval is None
+
+
+class DummyResource1(wsgiservice.Resource):
     _path = '/foo/{id}'
 
-class DummyResource2(object):
+class DummyResource2(wsgiservice.Resource):
     _path = '/foo/id'
 
-class DummyResource3(object):
+class DummyResource3(wsgiservice.Resource):
     _path = '/foo/anything/else'
+    EXTENSION_MAP = {
+        '.xml': 'text/xml',
+        '.json': 'application/json',
+        '.txt': 'text/plain',
+    }
 
 def _assert_two_resources(router):
     """Helper for some of the test_two_resources_* tests"""

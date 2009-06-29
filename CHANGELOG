@@ -1,0 +1,6 @@
+2009-06-29  Patrice Neff
+
+    * routing.py (Router._compile): Use extensions defined by resource in
+      EXTENSION_MAP dictionary instead of the hardcoded list of '.xml' and
+      '.json'.
+

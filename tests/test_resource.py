@@ -176,3 +176,22 @@ def test_ignore_favicon_post():
     res = usr()
     print res
     assert res.status_int == 200
+
+def test_default_mimetype():
+    """Use the first item of EXTENSION_MAP as the default."""
+    class Dummy(wsgiservice.Resource):
+        EXTENSION_MAP = [
+            ('.txt', 'text/plain'),
+            ('.xml', 'text/xml'),
+        ]
+        _path = '/status'
+        def GET(self, id):
+            return 'OK'
+        def to_text_plain(self, raw):
+            return raw
+    req = webob.Request.blank('/status')
+    res = webob.Response()
+    usr = Dummy(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.headers['Content-Type'] == 'text/plain; charset=UTF-8'

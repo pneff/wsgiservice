@@ -69,7 +69,7 @@ class Application(object):
         path_params, resource = parsed
         instance = resource(request=request, response=response,
             path_params=path_params, application=self)
-        response = instance.call()
+        response = instance()
         if request.method == 'HEAD':
             response.body = ''
         return response

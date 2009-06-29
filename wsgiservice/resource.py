@@ -55,7 +55,7 @@ class Resource(object):
         """
         self.response.headers['Allow'] = self.get_allowed_methods()
     
-    def call(self):
+    def __call__(self):
         """Main entry point for calling this resource. Handles the method
         dispatching, response conversion, etc. for this resource.
         Catches all exceptions.

@@ -4,3 +4,6 @@
       EXTENSION_MAP dictionary instead of the hardcoded list of '.xml' and
       '.json'.
 
+    * resource.py: Change EXTENSION_MAP to a list instead of a dictionary, so
+      we can rely on the order of entries. Breaks backwards-compatibility for
+      resources with a custom EXTENSION_MAP.

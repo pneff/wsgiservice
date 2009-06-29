@@ -91,11 +91,11 @@ class DummyResource2(wsgiservice.Resource):
 
 class DummyResource3(wsgiservice.Resource):
     _path = '/foo/anything/else'
-    EXTENSION_MAP = {
-        '.xml': 'text/xml',
-        '.json': 'application/json',
-        '.txt': 'text/plain',
-    }
+    EXTENSION_MAP = [
+        ('.xml', 'text/xml'),
+        ('.json', 'application/json'),
+        ('.txt', 'text/plain'),
+    ]
 
 def _assert_two_resources(router):
     """Helper for some of the test_two_resources_* tests"""

@@ -23,9 +23,10 @@ class Resource(object):
     :var KNOWN_METHODS: List of the known HTTP methods. Used by
         :func:`get_method` to handle methods that are not implemented.
         (Default: All methods defined by the HTTP 1.1 standard :rfc:`2616`)
-    :var EXTENSION_MAP: Dictionary mapping file extensions to MIME types. Used
-        by :func:`get_content_type` to determine the requested MIME type.
-        (Default: '.xml' => 'text/xml' and '.json' => 'application/json')
+    :var EXTENSION_MAP: List of tuples mapping file extensions to MIME types.
+        The first item of the tuple is the extension and the second is the
+        associated MIME type. Used by :func:`get_content_type` to determine
+        the requested MIME type. (Default: '.xml' and '.json').
     :var NOT_FOUND: A tuple of exceptions that should be treated as 404. An
         ideal candidate is KeyError if you do dictionary accesses. Used by
         :func:`call` which calls :func:`handle_exception_404` whenever an
@@ -37,10 +38,10 @@ class Resource(object):
     XML_ROOT_TAG = 'response'
     KNOWN_METHODS = ['OPTIONS', 'GET', 'HEAD', 'POST', 'PUT', 'DELETE',
                      'TRACE', 'CONNECT']
-    EXTENSION_MAP = {
-        '.xml': 'text/xml',
-        '.json': 'application/json'
-    }
+    EXTENSION_MAP = [
+        ('.xml', 'text/xml'),
+        ('.json', 'application/json'),
+    ]
     NOT_FOUND = ()
     IGNORED_PATHS = ('/favicon.ico', '/robots.txt')
 
@@ -119,19 +120,21 @@ class Resource(object):
     
     def get_content_type(self):
         """Returns the Content Type to serve from either the extension or the
-        Accept headers. Uses the :attr:`EXTENSION_MAP` dictionary for all the
+        Accept headers. Uses the :attr:`EXTENSION_MAP` list for all the
         configured MIME types.
         """
         extension = self.path_params.get('_extension')
-        if extension in self.EXTENSION_MAP:
-            return self.EXTENSION_MAP[extension]
+        for ext, mime in self.EXTENSION_MAP:
+            if ext == extension:
+                return mime
         else:
             # Use the Accept headers
             if self.response.vary is None:
                 self.response.vary = ['Accept']
             else:
                 self.response.vary.append('Accept')
-            return self.request.accept.first_match(self.EXTENSION_MAP.values())
+            types = [mime for ext, mime in self.EXTENSION_MAP]
+            return self.request.accept.first_match(types)
     
     def handle_ignored_resources(self):
         """Ignore robots.txt and favicon.ico GET requests."""
@@ -207,13 +210,13 @@ class Resource(object):
         """
         if etag:
             etag = etag.replace('"', '')
-            ext = None
-            for key, value in self.EXTENSION_MAP.iteritems():
-                if value == self.type:
-                    ext = key[1:]
+            extension = None
+            for ext, mime in self.EXTENSION_MAP:
+                if mime == self.type:
+                    extension = ext[1:]
                     break
-            if ext:
-                etag += '_' + ext
+            if extension:
+                etag += '_' + extension
             self.response.etag = '"' +  etag + '"'
     
     def get_last_modified(self):
@@ -387,11 +390,11 @@ class Help(Resource):
     .. todo:: Use first sentence of docstring for summary, add bigger version
               at the bottom.
     """
-    EXTENSION_MAP = {
-        '.xml': 'text/xml',
-        '.json': 'application/json',
-        '.html': 'text/html',
-    }
+    EXTENSION_MAP = [
+        ('.xml', 'text/xml'),
+        ('.json', 'application/json'),
+        ('.html', 'text/html'),
+    ]
     XML_ROOT_TAG = 'help'
 
     def GET(self):
@@ -405,7 +408,7 @@ class Help(Resource):
                     'XML_ROOT_TAG': res.XML_ROOT_TAG,
                     'KNOWN_METHODS': res.KNOWN_METHODS,
                     'EXTENSION_MAP': dict((key[1:], value) for key, value
-                        in res.EXTENSION_MAP.iteritems()),
+                        in res.EXTENSION_MAP),
                     'NOT_FOUND': [ex.__name__ for ex in res.NOT_FOUND],
                 },
                 'methods': self._get_methods(res),

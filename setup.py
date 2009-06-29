@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-print find_packages()
 setup(
     name='WsgiService',
     version='0.1',

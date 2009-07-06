@@ -39,16 +39,16 @@ def test_serialisation_bool():
 
 def test_default_value():
     class User(wsgiservice.Resource):
-        def GET(self, foo, id=5):
-            return {'id': id, 'foo': foo}
-    req = webob.Request.blank('/?foo=bar', headers={'Accept': 'application/json'})
+        def GET(self, foo, bar, id=5):
+            return {'id': id, 'bar': bar, 'foo': foo}
+    req = webob.Request.blank('/?foo=baz1&bar=baz2', headers={'Accept': 'application/json'})
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
     print res
     obj = json.loads(res.body)
     print obj
-    assert obj == {'id': 5, 'foo': 'bar'}
+    assert obj == {'id': 5, 'foo': 'baz1', 'bar': 'baz2'}
 
 def test_default_value_overwrite():
     class User(wsgiservice.Resource):

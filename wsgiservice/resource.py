@@ -254,7 +254,7 @@ class Resource(object):
             method_params.pop(0) # pop the self off
         optional_args = []
         if defaults:
-            optional_args = method_params[len(defaults):]
+            optional_args = method_params[-len(defaults):]
         params = []
         for param in method_params:
             value = None

@@ -390,11 +390,7 @@ class Help(Resource):
     .. todo:: Use first sentence of docstring for summary, add bigger version
               at the bottom.
     """
-    EXTENSION_MAP = [
-        ('.xml', 'text/xml'),
-        ('.json', 'application/json'),
-        ('.html', 'text/html'),
-    ]
+    EXTENSION_MAP = [('.html', 'text/html')] + Resource.EXTENSION_MAP
     XML_ROOT_TAG = 'help'
 
     def GET(self):

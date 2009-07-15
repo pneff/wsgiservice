@@ -9,6 +9,7 @@ import wsgiservice.exceptions
 
 
 def test_getapp():
+    """get_app returns a list of resources from the dictionary."""
     app = wsgiservice.get_app(globals())
     print app
     print app._resources
@@ -25,6 +26,7 @@ def test_getapp():
 
 
 def test_app_handle_404():
+    """Application returns a 404 status code if no resource is found."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/foo')
     res = app._handle_request(req)
@@ -34,6 +36,7 @@ def test_app_handle_404():
 
 
 def test_app_handle_method_not_allowed():
+    """Application returns 405 for known but unimplemented methods."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res2', {'REQUEST_METHOD': 'GET'})
     res = app._handle_request(req)
@@ -44,6 +47,7 @@ def test_app_handle_method_not_allowed():
 
 
 def test_app_handle_method_not_known():
+    """Application returns 501 for unknown and unimplemented methods."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res2', {'REQUEST_METHOD': 'PATCH'})
     res = app._handle_request(req)
@@ -54,6 +58,7 @@ def test_app_handle_method_not_known():
 
 
 def test_app_handle_response_201_abs():
+    """raise_201 used the location header directly if it is absolute."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res2', {'REQUEST_METHOD': 'POST'})
     res = app._handle_request(req)
@@ -64,6 +69,7 @@ def test_app_handle_response_201_abs():
 
 
 def test_app_handle_response_201_rel():
+    """raise_201 adds relative location header to the current request path."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res2', {'REQUEST_METHOD': 'PUT'})
     res = app._handle_request(req)
@@ -74,6 +80,7 @@ def test_app_handle_response_201_rel():
 
 
 def test_app_handle_options():
+    """Resource provides a good default for the OPTIONS method."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res2', {'REQUEST_METHOD': 'OPTIONS'})
     res = app._handle_request(req)
@@ -83,6 +90,7 @@ def test_app_handle_options():
 
 
 def test_app_get_simple():
+    """Application handles GET request and ignored POST data in that case."""
     app = wsgiservice.get_app(globals())
     body = 'foo=42&baz=foobar'
     req = Request.blank('/res1/theid', {
@@ -98,6 +106,7 @@ def test_app_get_simple():
 
 
 def test_app_head_revert_to_get_simple():
+    """Application converts a HEAD to a GET request but doesn't send body."""
     app = wsgiservice.get_app(globals())
     body = 'foo=42&baz=foobar'
     req = Request.blank('/res1/theid', {
@@ -112,6 +121,7 @@ def test_app_head_revert_to_get_simple():
 
 
 def test_app_post_simple():
+    """Application handles normal POST request."""
     app = wsgiservice.get_app(globals())
     body = 'foo=42&baz=foobar'
     req = Request.blank('/res1/theid', {
@@ -126,6 +136,7 @@ def test_app_post_simple():
 
 
 def test_app_wsgi():
+    """Application instance works as a WSGI application."""
     app = wsgiservice.get_app(globals())
     env = Request.blank('/res1/theid.json').environ
     start_response = mox.MockAnything()
@@ -140,16 +151,19 @@ def test_app_wsgi():
 
 
 def test_validation_method():
+    """Resource validates a method parameter which was set on the method."""
     inst = Resource1(None, None, None)
-    inst.validate_param(inst.GET, 'foo', '9')
+    inst.validate_param(inst.POST, 'foo', '9')
 
 
 def test_validation_class():
+    """Resource validates a method parameter which was set on the class."""
     inst = Resource1(None, None, None)
     inst.validate_param(inst.GET, 'id', 'anyid')
 
 
 def test_validation_with_re_none_value():
+    """Resource rejects empty values if a validation is defined."""
     inst = Resource1(None, None, None)
     try:
         inst.validate_param(inst.GET, 'id', None)
@@ -161,6 +175,7 @@ def test_validation_with_re_none_value():
 
 
 def test_validation_with_re_mismatch():
+    """Resource rejects invalid values by regular expression."""
     inst = Resource1(None, None, None)
     try:
         inst.validate_param(inst.GET, 'id', 'fo')
@@ -172,6 +187,7 @@ def test_validation_with_re_mismatch():
 
 
 def test_validation_with_re_mismatch_toolong():
+    """Resource rejects invalid values by regular expression."""
     inst = Resource1(None, None, None)
     try:
         inst.validate_param(inst.GET, 'id', 'fooobarrr')
@@ -183,6 +199,7 @@ def test_validation_with_re_mismatch_toolong():
 
 
 def test_with_expires():
+    """expires decorator correctly sets the Cache-Control header."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res3')
     res = app._handle_request(req)
@@ -192,6 +209,7 @@ def test_with_expires():
 
 
 def test_with_expires_calculations():
+    """expires decorator correctly sets the Expires header."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4')
     res = app._handle_request(req)
@@ -201,6 +219,7 @@ def test_with_expires_calculations():
 
 
 def test_with_expires_calculations_double_wrapped():
+    """Wrapped expires decorators work by just using the last one."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4', {'REQUEST_METHOD': 'POST'})
     res = app._handle_request(req)
@@ -211,6 +230,7 @@ def test_with_expires_calculations_double_wrapped():
 
 
 def test_etag_generate():
+    """ETags are calculated by adding the extension to the custom etag."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid')
     res = app._handle_request(req)
@@ -219,6 +239,7 @@ def test_etag_generate():
 
 
 def test_etag_generate_json():
+    """ETags are calculated by adding the extension to the custom etag."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid', {'HTTP_ACCEPT': 'application/json'})
     res = app._handle_request(req)
@@ -227,6 +248,7 @@ def test_etag_generate_json():
 
 
 def test_etag_generate_json_ext():
+    """ETags are calculated by adding the extension to the custom etag."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4.json?id=myid')
     res = app._handle_request(req)
@@ -235,6 +257,7 @@ def test_etag_generate_json_ext():
 
 
 def test_etag_if_match_false():
+    """A GET request with a non-matching If-Match returns 412."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
         {'HTTP_IF_MATCH': '"otherid"'})
@@ -245,6 +268,7 @@ def test_etag_if_match_false():
 
 
 def test_etag_if_match_true():
+    """A GET request with a matching If-Match passes."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid', {'HTTP_IF_MATCH': '"myid_xml"'})
     res = app._handle_request(req)
@@ -254,6 +278,7 @@ def test_etag_if_match_true():
 
 
 def test_etag_if_match_not_set():
+    """A GET request without an If-Match header passes."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid')
     res = app._handle_request(req)
@@ -263,6 +288,7 @@ def test_etag_if_match_not_set():
 
 
 def test_etag_if_none_match_get_true():
+    """A GET request with a matching If-None-Match returns 304."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid', {'HTTP_IF_NONE_MATCH': '"myid_xml"'})
     res = app._handle_request(req)
@@ -273,6 +299,7 @@ def test_etag_if_none_match_get_true():
 
 
 def test_etag_if_none_match_head_true():
+    """A HEAD request with a matching If-None-Match returns 304."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
         {'HTTP_IF_NONE_MATCH': '"myid_xml"', 'REQUEST_METHOD': 'HEAD'})
@@ -284,6 +311,7 @@ def test_etag_if_none_match_head_true():
 
 
 def test_etag_if_none_match_post_true():
+    """A POST request with a matching If-None-Match returns 412."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
         {'HTTP_IF_NONE_MATCH': '"myid_xml"', 'REQUEST_METHOD': 'POST'})
@@ -294,6 +322,7 @@ def test_etag_if_none_match_post_true():
 
 
 def test_etag_if_none_match_false():
+    """A GET request with a non-matching If-None-Match executes normally."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
         {'HTTP_IF_NONE_MATCH': '"otherid"'})
@@ -304,6 +333,7 @@ def test_etag_if_none_match_false():
 
 
 def test_modified_generate():
+    """Resource generates a good Last-Modified response header."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid')
     res = app._handle_request(req)
@@ -312,6 +342,7 @@ def test_modified_generate():
 
 
 def test_if_modified_since_false():
+    """A GET request with a matching If-Modified-Since returns 304."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
         {'HTTP_IF_MODIFIED_SINCE': 'Fri, 01 May 2009 14:30:00 GMT'})
@@ -324,6 +355,7 @@ def test_if_modified_since_false():
 
 
 def test_if_modified_since_true():
+    """A GET request with an outdated If-Modified-Since passes."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
         {'HTTP_IF_MODIFIED_SINCE': 'Fri, 01 May 2009 14:18:10 GMT'})
@@ -334,6 +366,7 @@ def test_if_modified_since_true():
 
 
 def test_if_unmodified_since_false():
+    """A GET request with an outdated If-Unmodified-Since returns 412."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
         {'HTTP_IF_UNMODIFIED_SINCE': 'Fri, 01 May 2009 12:30:00 GMT'})
@@ -345,6 +378,7 @@ def test_if_unmodified_since_false():
 
 
 def test_if_unmodified_since_false_head():
+    """A HEAD request with an outdated If-Unmodified-Since returns 412."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
         {'HTTP_IF_UNMODIFIED_SINCE': 'Thu, 30 Apr 2009 19:30:00 GMT',
@@ -358,6 +392,7 @@ def test_if_unmodified_since_false_head():
 
 
 def test_if_unmodified_since_false_post():
+    """A POST request with an outdated If-Unmodified-Since returns 412."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
         {'HTTP_IF_UNMODIFIED_SINCE': 'Thu, 30 Apr 2009 19:30:00 GMT',
@@ -371,6 +406,7 @@ def test_if_unmodified_since_false_post():
 
 
 def test_if_unmodified_since_true():
+    """A GET request with a current If-Unmodified-Since returns 200."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
         {'HTTP_IF_UNMODIFIED_SINCE': 'Fri, 01 May 2009 14:30:00 GMT',
@@ -383,6 +419,7 @@ def test_if_unmodified_since_true():
 
 
 def test_verify_content_md5_invalid():
+    """A request with a body that does not match Content-MD5 returns 400."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res1/theid', {
         'HTTP_CONTENT_MD5': '89d5739baabbbe65be35cbe61c88e06d',
@@ -399,6 +436,7 @@ def test_verify_content_md5_invalid():
 
 
 def test_verify_content_md5_valid():
+    """A request with a body that matches Content-MD5 passes."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res1/theid', {
         'HTTP_CONTENT_MD5': '89d5739baabbbe65be35cbe61c88e06d',
@@ -409,6 +447,7 @@ def test_verify_content_md5_valid():
 
 
 def test_exception_json():
+    """An exception is serialized as a dictionary in JSON."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res5?throw=1', {'HTTP_ACCEPT': 'application/json'})
     res = app._handle_request(req)
@@ -418,6 +457,7 @@ def test_exception_json():
 
 
 def test_exception_xml():
+    """An exception is serialized as an error response in XML."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res5?throw=1')
     res = app._handle_request(req)
@@ -428,6 +468,7 @@ def test_exception_xml():
 
 
 def test_res6_default():
+    """Resource6 works normally for keys which exist on the resource."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res6/uid')
     res = app._handle_request(req)
@@ -437,6 +478,7 @@ def test_res6_default():
 
 
 def test_notfound_xml():
+    """Requests that cause a NOT_FOUND exception return 404."""
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res6/foo')
     res = app._handle_request(req)
@@ -447,7 +489,8 @@ def test_notfound_xml():
 
 class AbstractResource(wsgiservice.Resource):
     """This resource should not be added to the application as it doesn't
-    have a path."""
+    have a path. (Verified by test_getapp)
+    """
 
 
 class Resource1(wsgiservice.Resource):

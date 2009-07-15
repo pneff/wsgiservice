@@ -4,6 +4,7 @@ import wsgiservice
 
 
 def test_mount():
+    """mount decorator adds the path as an attribute _path."""
 
     @wsgiservice.mount('/{id}')
     class Document(wsgiservice.Resource):
@@ -14,6 +15,7 @@ def test_mount():
 
 
 def test_validate_resource():
+    """validate decorator adds rules to the _validations attribute list."""
 
     @wsgiservice.validate('id', re=r'[-0-9a-zA-Z]{36}',
         doc='Document ID, must be a valid UUID.')
@@ -27,6 +29,7 @@ def test_validate_resource():
 
 
 def test_validate_method():
+    """validate decorator adds rules to the _validations attribute list."""
 
     class User(wsgiservice.Resource):
 
@@ -43,6 +46,7 @@ def test_validate_method():
 
 
 def test_serialisation_bool():
+    """XML serialization uses the lower-case string value for booleans."""
 
     class User(wsgiservice.Resource):
         pass
@@ -54,6 +58,7 @@ def test_serialisation_bool():
 
 
 def test_default_value():
+    """Request parameters can have default values."""
 
     class User(wsgiservice.Resource):
 
@@ -72,6 +77,7 @@ def test_default_value():
 
 
 def test_default_value_overwrite():
+    """Parameters with default values can be overwritten in the request."""
 
     class User(wsgiservice.Resource):
 
@@ -90,7 +96,7 @@ def test_default_value_overwrite():
 
 
 def test_default_value_validate_novalue():
-    """Make sure default params are validated correctly when not passed in."""
+    """Default parameters are validated correctly when not passed in."""
 
     class User(wsgiservice.Resource):
 
@@ -110,7 +116,7 @@ def test_default_value_validate_novalue():
 
 
 def test_default_value_validate():
-    """Make sure default params are validated correctly when passed in."""
+    """Default parameters are validated correctly when passed in."""
 
     class User(wsgiservice.Resource):
 
@@ -165,8 +171,7 @@ def test_ignore_favicon():
 
 
 def test_ignore_favicon_overwrite():
-    """Don't ignore favicon.ico when IGNORE_BROWSER_RESOURCES is set to False.
-    """
+    """Don't ignore favicon.ico when IGNORED_PATHS is empty."""
 
     class Dummy(wsgiservice.Resource):
         _path = '/{id}'
@@ -222,9 +227,6 @@ def test_ignore_favicon_post():
 
     class Dummy(wsgiservice.Resource):
         _path = '/{id}'
-
-        def GET(self, id):
-            return id
 
         def POST(self, id):
             return id

@@ -2,7 +2,7 @@ Summary of the important changes per WsgiService release. To get the full
 history use the commit log.
 
 
-0.2.1: UNRELEASED
+0.2.1: July 15, 2009
     - Routing: Use extensions defined by resource in EXTENSION_MAP dictionary
       instead of the hardcoded list of '.xml' and '.json'.
     - Resource: Change EXTENSION_MAP to a list instead of a dictionary, so we
@@ -17,7 +17,8 @@ history use the commit log.
       <child order="N"> instead of just <N> (where N is the array index).
     - Help resource: Sort the resources by name, mark parameters with
       validation rules as mandatory.
-    - Documentation: Add a lot of additional documentation.
+    - Documentation: Add a lot of additional documentation. Document the
+      current state of HTTP implementation.
 
 
 0.2: June 29, 2009

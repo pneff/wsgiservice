@@ -426,6 +426,11 @@ class Help(Resource):
                 'methods': self._get_methods(res),
                 'path': self.request.script_name + res._path,
             })
+        # Sort by name
+        retval = [(r['name'], r) for r in retval]
+        retval.sort()
+        retval = [r[1] for r in retval]
+        
         return retval
 
     def _get_methods(self, res):

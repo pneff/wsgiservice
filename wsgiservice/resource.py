@@ -2,8 +2,8 @@ import hashlib
 import inspect
 import json
 import logging
-import webob
 import re
+import webob
 from xml.sax.saxutils import escape as xml_escape
 from wsgiservice.status import *
 from wsgiservice.decorators import mount
@@ -336,27 +336,25 @@ class Resource(object):
         :param method_name: Name of the method on the current instance to
                             call.
         :type method_name: str
-
-        .. todo:: Can be slightly refactored (put sources of data in a list)
         """
+        DATA_SOURCES = [self.path_params, self.request.GET, self.request.POST]
         method = getattr(self, method_name)
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
         if method_params:
             method_params.pop(0) # pop the self off
-        optional_args = []
         if defaults:
             optional_args = method_params[-len(defaults):]
+            # Create a new dictionary with the keys from optional_args and
+            # values from defaults.
+            optional_args = dict(zip(optional_args, defaults))
+            DATA_SOURCES.append(optional_args)
         params = []
         for param in method_params:
             value = None
-            if param in self.path_params:
-                value = self.path_params[param]
-            elif param in self.request.GET:
-                value = self.request.GET[param]
-            elif param in self.request.POST:
-                value = self.request.POST[param]
-            elif param in optional_args:
-                value = defaults[optional_args.index(param)]
+            for source in DATA_SOURCES:
+                if source and param in source:
+                    value = source[param]
+                    break
             self.validate_param(method, param, value)
             params.append(value)
         return method(*params)

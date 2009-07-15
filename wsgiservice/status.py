@@ -25,6 +25,7 @@ The following status codes don't have a method here:
    * 505 HTTP Version Not Supported: Should be checked by the HTTP server.
 """
 from urlparse import urljoin
+from wsgiservice.exceptions import ResponseException
 
 
 def raise_200(instance):

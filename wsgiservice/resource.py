@@ -7,7 +7,7 @@ import re
 from xml.sax.saxutils import escape as xml_escape
 from wsgiservice.status import *
 from wsgiservice.decorators import mount
-from wsgiservice.exceptions import ValidationException
+from wsgiservice.exceptions import ValidationException, ResponseException
 
 logger = logging.getLogger(__name__)
 

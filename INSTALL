@@ -1,0 +1,31 @@
+If you want to install the current live version of WsgiService just type the
+following command on the command line (you probably want to execute this
+inside a virtualenv):
+
+    easy_install WsgiService
+
+
+DEVELOPMENT
+===========
+
+To install a development version, first check out WsgiService from somewhere.
+The current master fork is the git repository maintained by Patrice Neff at
+<git://github.com/pneff/wsgiservice.git>.
+
+After checking out, type the following command:
+
+    python setup.py develop
+
+You need setuptools for this to work.
+
+
+DOCUMENTATION
+=============
+
+To build the documentation first install Sphinx <http://sphinx.pocoo.org/>.
+Then execute:
+
+    cd docs
+    make html
+
+The documentation is generated in the directory `_build/html/index.html`.

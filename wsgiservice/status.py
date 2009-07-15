@@ -201,7 +201,7 @@ def raise_412(instance, msg=None):
         instance.response.body_raw = {'error': msg}
     raise ResponseException(instance.response)
 
-def raise_500(instance):
+def raise_500(instance, msg=None):
     """Abort the current request with a 500 (Internal Server Error) response
     code. If the message is given it's output as an error message in the
     response body (correctly converted to the requested MIME type).

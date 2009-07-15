@@ -1,6 +1,7 @@
 """The store service is a simple document store. It stores key/value pairs on
 the documents. This is currently a dummy implementation with ony in-memory
-storage."""
+storage.
+"""
 
 import uuid
 from wsgiservice import *
@@ -9,12 +10,16 @@ import sys
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stderr)
 
-
 data = {}
+
 
 @mount('/{id}')
 @validate('id', re=r'[-0-9a-zA-Z]{36}', doc='User ID, must be a valid UUID.')
 class Document(Resource):
+    """Represents an individual document in the document store. The storage
+    is only persistent in-memory, so it will go away when the service is
+    restarted.
+    """
     NOT_FOUND = (KeyError,)
 
     def GET(self, id):

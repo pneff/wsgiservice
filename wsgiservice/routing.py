@@ -5,20 +5,28 @@ import wsgiservice
 
 class Router(object):
     """Simple routing. Path parameters can be extracted with the syntax
-    {keyword} where keyword is the path parameter. That parameter will then
-    be passed on to the called request method.
+    ``{keyword}`` where keyword is the path parameter. That parameter will
+    then be passed on to the called request method.
 
     :param resources: A list of :class:`wsgiservice.Resource` classes to be
                       routed to.
     """
 
     def __init__(self, resources):
+        """Constructor. Extracts all the paths from the given resources.
+
+        :param resources: List of :class:`wsgiservice.resource.Resource`
+                          classes to be served by this application.
+        """
         resources = self._get_sorted(resources)
         self._routes = self._compile(resources)
 
     def _get_sorted(self, resources):
         """Order the resources by priority - the most specific paths come
         first.
+
+        :param resources: List of :class:`wsgiservice.resource.Resource`
+                          classes to be served by this application.
         """
         tmp = []
         for resource in resources:
@@ -29,6 +37,14 @@ class Router(object):
         return [resource for prio, resource in reversed(sorted(tmp))]
 
     def _compile(self, resources):
+        """Compiles a list of match functions (using regular expressions) for
+        the paths. Returns a list of two-item tuples consisting of the match
+        function and the resource class. The list is in the same order as the
+        :param:`resources` parameter.
+
+        :param resources: List of :class:`wsgiservice.resource.Resource`
+                          classes to be served by this application.
+        """
         routes = []
         search_vars = re.compile(r'\{(\w+)\}').finditer
         for resource in resources:
@@ -47,6 +63,13 @@ class Router(object):
         return routes
 
     def __call__(self, path):
+        """Return the resource which best matches the given path. Returns a
+        two-item tuple of extracted path parameters (as dict) and the resource
+        class if a match is found. Otherwise returns None.
+
+        :param path: The path requested by the client.
+        :type path: str
+        """
         for match, resource in self._routes:
             retval = match(path)
             if retval:

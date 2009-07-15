@@ -18,37 +18,65 @@ class Resource(object):
 
     For each HTTP call the corresponding method (equal to the HTTP method)
     will be called.
-
-    :var XML_ROOT_TAG: The root tag for generated XML output. Used by
-        :func:`to_text_xml`. (Default: 'response')
-    :var KNOWN_METHODS: List of the known HTTP methods. Used by
-        :func:`get_method` to handle methods that are not implemented.
-        (Default: All methods defined by the HTTP 1.1 standard :rfc:`2616`)
-    :var EXTENSION_MAP: List of tuples mapping file extensions to MIME types.
-        The first item of the tuple is the extension and the second is the
-        associated MIME type. Used by :func:`get_content_type` to determine
-        the requested MIME type. (Default: '.xml' and '.json').
-    :var NOT_FOUND: A tuple of exceptions that should be treated as 404. An
-        ideal candidate is KeyError if you do dictionary accesses. Used by
-        :func:`call` which calls :func:`handle_exception_404` whenever an
-        exception from this tuple occurs. (Default: Empty tuple)
-    :var IGNORED_PATHS: A tuple of absolute paths that should return a 404.
-        By default this is used to ignored requests for favicon.ico and
-        robots.txt so that browsers don't cause too many exceptions.
     """
+    #: The root tag for generated XML output. Used by :func:`to_text_xml`.
+    #: (Default: 'response')
     XML_ROOT_TAG = 'response'
+
+    #: List of the known HTTP methods. Used by :func:`get_method` to handle
+    #: methods that are not implemented. (Default: All methods defined by the
+    #: HTTP 1.1 standard :rfc:`2616`)
     KNOWN_METHODS = ['OPTIONS', 'GET', 'HEAD', 'POST', 'PUT', 'DELETE',
                      'TRACE', 'CONNECT']
+
+    #: List of tuples mapping file extensions to MIME types. The first item of
+    #: the tuple is the extension and the second is the associated MIME type.
+    #: Used by :func:`get_content_type` to determine the requested MIME type.
+    #: (Default: '.xml' and '.json').
     EXTENSION_MAP = [
         ('.xml', 'text/xml'),
         ('.json', 'application/json'),
     ]
+
+    #: A tuple of exceptions that should be treated as 404. An ideal candidate
+    #: is KeyError if you do dictionary accesses. Used by :func:`call` which
+    #: calls :func:`handle_exception_404` whenever an exception from this
+    #: tuple occurs. (Default: Empty tuple)
     NOT_FOUND = ()
+
+    #: A tuple of absolute paths that should return a 404. By default this is
+    #: used to ignored requests for favicon.ico and robots.txt so that
+    #: browsers don't cause too many exceptions.
     IGNORED_PATHS = ('/favicon.ico', '/robots.txt')
+
+    #: Object representing the current request. Set by the constructor.
+    request = None
+
+    #: Object representing the current response. Set by the constructor.
+    response = None
+
+    #: Dictionary with the path parameters. Set by the constructor.
+    path_params = None
+
+    #: Reference to the application. Set by the constructor.
+    application = None
 
     def __init__(self, request, response, path_params, application=None):
         """Constructor. Order of the parameters is not guarantteed, always
         used named parameters.
+
+        :param request: Object representing the current request.
+        :type request: :class:`webob.Request`
+        :param response: Object representing the response to be sent.
+        :type response: :class:`webob.Response`
+        :param path_params: Dictionary of all parameters passed in via the
+                            path. This is the return value of
+                            :func:`Router.__call__`.
+        :type path_params: dict
+        :param application: Reference to the application which is calling this
+                            resource. Can be used to reference other resources
+                            or properties of the application itself.
+        :type path_params: :class:`wsgiservice.Application`
         """
         self.request = request
         self.response = response
@@ -57,20 +85,24 @@ class Resource(object):
 
     def OPTIONS(self):
         """Default implementation of the OPTIONS verb. Outputs a list of
-        allowed methods on this resource in the `Allow` response header.
+        allowed methods on this resource in the ``Allow`` response header.
         """
         self.response.headers['Allow'] = self.get_allowed_methods()
 
     def __call__(self):
         """Main entry point for calling this resource. Handles the method
         dispatching, response conversion, etc. for this resource.
-        Catches all exceptions.
 
-            * :class:`ResponseException`: Replaces the instance's response
-              attribute with the one fromthe exception.
-            * For all exceptions in the :attr:`NOT_FOUND` tuple
+        Catches all exceptions:
+
+            - :class:`webob.exceptions.ResponseException`: Replaces the
+              instance's response attribute with the one from the exception.
+            - For all exceptions in the :attr:`NOT_FOUND` tuple
               :func:`handle_exception_404` is called.
-            * For all other exceptions deriving from the :class:`Exception`
+            - :class:`webob.exceptions.ValidationException`:
+              :func:`handle_exception` is called and the response code is set
+              to 400 (Bad Request).
+            - For all other exceptions deriving from the :class:`Exception`
               base class, the :func:`handle_exception` method is called.
         """
         self.type = self.get_content_type()
@@ -95,7 +127,15 @@ class Resource(object):
     def get_resource(self, resource, **kwargs):
         """Returns a new instance of the resource class passed in as resource.
         This is a helper to make future-compatibility easier when new
-        arguments get added to the constructor."""
+        arguments get added to the constructor.
+
+        :param resource: Resource class to instantiate. Gets called with the
+                         named arguments as required for the constructor.
+        :type resource: :class:`Resource`
+        :param kwargs: Additional named arguments to pass to the constructor
+                       function.
+        :type kwargs: dict
+        """
         return resource(request=self.request, response=self.response,
             path_params=self.path_params, application=self.application,
             **kwargs)
@@ -105,6 +145,12 @@ class Resource(object):
         HTTP exception if no method can be found. Aborts with a 405 status
         code for known methods (based on the :attr:`KNOWN_METHODS` list) and a
         501 status code for all other methods.
+
+        :param method: Name of the method to return. Must be all-uppercase.
+        :type method: str
+
+        :raises: :class:`webob.exceptions.ResponseException` of status 405 or
+                 501 if the method is not implemented on this resource.
         """
         if method is None:
             method = self.request.method
@@ -129,17 +175,25 @@ class Resource(object):
         for ext, mime in self.EXTENSION_MAP:
             if ext == extension:
                 return mime
+        # Else: use the Accept headers
+        if self.response.vary is None:
+            self.response.vary = ['Accept']
         else:
-            # Use the Accept headers
-            if self.response.vary is None:
-                self.response.vary = ['Accept']
-            else:
-                self.response.vary.append('Accept')
-            types = [mime for ext, mime in self.EXTENSION_MAP]
-            return self.request.accept.first_match(types)
+            self.response.vary.append('Accept')
+        types = [mime for ext, mime in self.EXTENSION_MAP]
+        return self.request.accept.first_match(types)
 
     def handle_ignored_resources(self):
-        """Ignore robots.txt and favicon.ico GET requests."""
+        """Ignore robots.txt and favicon.ico GET requests based on a list of
+        absolute paths in :attr:`IGNORED_PATHS`. Aborts the request with a 404
+        status code.
+
+        This is mostly a usability issue to avoid extra log entries for
+        resources we are not interested in.
+
+        :raises: :class:`webob.exceptions.ResponseException` of status 404 if
+                 the resource is ignored.
+        """
         if (self.method in ('GET', 'HEAD') and
                 self.request.path_qs in self.IGNORED_PATHS):
             raise_404(self)
@@ -149,11 +203,12 @@ class Resource(object):
         abort the request.
 
             - Content-MD5 request header must match the MD5 hash of the full
-              input.
+              input (:func:`assert_condition_md5`).
             - If-Match and If-None-Match etags are checked against the ETag of
-              this resource.
+              this resource (:func:`assert_condition_etag`).
             - If-Modified-Since and If-Unmodified-Since are checked against
-              the modification date of this resource.
+              the modification date of this resource
+              (:func:`assert_condition_last_modified`).
         """
         self.assert_condition_md5()
         etag = self.clean_etag(self.call_method('get_etag'))
@@ -162,9 +217,12 @@ class Resource(object):
         self.assert_condition_last_modified()
 
     def assert_condition_md5(self):
-        """If the `Content-MD5` request header is present in the request it's
-        verified against the MD5 hash of the request body. If they don't
+        """If the ``Content-MD5`` request header is present in the request
+        it's verified against the MD5 hash of the request body. If they don't
         match, a 400 HTTP response is returned.
+
+        :raises: :class:`webob.exceptions.ResponseException` of status 400 if
+                 the MD5 hash does not match the body.
         """
         if 'Content-MD5' in self.request.headers:
             body_md5 = hashlib.md5(self.request.body_file.read()).hexdigest()
@@ -173,8 +231,17 @@ class Resource(object):
 
     def assert_condition_etag(self):
         """If the resource has an ETag (see :func:`get_etag`) the request
-        headers `If-Match` and `If-None-Match` are verified. May abort the
+        headers ``If-Match`` and ``If-None-Match`` are verified. May abort the
         request with 304 or 412 response codes.
+
+        :raises:
+            - :class:`webob.exceptions.ResponseException` of status 304 if the
+              ETag matches the ``If-None-Match`` request header (GET/HEAD
+              requests only).
+            - :class:`webob.exceptions.ResponseException` of status 412 if the
+              ETag matches the ``If-None-Match`` request header (for requests
+              other than GET/HEAD) or the ETag does not match the ``If-Match``
+              header.
         """
         if self.response.etag:
             etag = self.response.etag.replace('"', '')
@@ -190,9 +257,16 @@ class Resource(object):
 
     def assert_condition_last_modified(self):
         """If the resource has a last modified date (see
-        :func:`get_last_modified`) the request headers `If-Modified-Since` and
-        `If-Unmodified-Since` are verified. May abort the request with 304 or
-        412 response codes.
+        :func:`get_last_modified`) the request headers ``If-Modified-Since``
+        and ``If-Unmodified-Since`` are verified. May abort the request with
+        304 or 412 response codes.
+
+        :raises:
+            - :class:`webob.exceptions.ResponseException` of status 304 if the
+              ``If-Modified-Since`` is later than the last modified date.
+            - :class:`webob.exceptions.ResponseException` of status 412 if the
+              last modified date is later than the ``If-Unmodified-Since``
+              header.
         """
         rq = self.request
         rs = self.response
@@ -212,8 +286,8 @@ class Resource(object):
         return None
 
     def clean_etag(self, etag):
-        """Cleans the ETag as returned by get_etag. Will wrap it in quotes
-        and append the extension for the current MIME type.
+        """Cleans the ETag as returned by :func:`get_etag`. Will wrap it in
+        quotes and append the extension for the current MIME type.
         """
         if etag:
             etag = etag.replace('"', '')
@@ -253,7 +327,14 @@ class Resource(object):
             2. GET parameters
             3. POST parameters
 
-        The return value of the method is then returned.
+        All values are validated using the method :func:`validate_param`. The
+        return value of the method is returned unaltered.
+
+        :param method_name: Name of the method on the current instance to
+                            call.
+        :type method_name: str
+
+        .. todo:: Can be slightly refactored (put sources of data in a list)
         """
         method = getattr(self, method_name)
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
@@ -286,6 +367,17 @@ class Resource(object):
         .. todo:: If the parameter has a default value then don't require a
                   value to be specified.
         .. todo:: Allow validation by type (e.g. header, post, query, etc.)
+
+        :param method: A function to get the validation information from (done
+                       using :func:`_get_validation`).
+        :type method: Python function
+        :param param: Name of the parameter to validate the value for.
+        :type param: str
+        :param value: Value passed in for the given parameter.
+        :type value: Any valid Python value
+
+        :raises: :class:`webob.exceptions.ValidationException` if the value is
+                 invalid for the given method and parameter.
         """
         rules = self._get_validation(method, param)
         if not rules:
@@ -299,8 +391,14 @@ class Resource(object):
                     "{0} value {1} does not validate.".format(param, value))
 
     def _get_validation(self, method, param):
-        """Return the correct validations dictionary for this parameter or
-        None.
+        """Return the correct validations dictionary for this parameter.
+        First checks the method itself and then its class. If no validation is
+        defined for this parameter, None is returned.
+
+        :param method: A function to get the validation information from.
+        :type method: Python function
+        :param param: Name of the parameter to get validation information for.
+        :type param: str
         """
         if hasattr(method, '_validations') and param in method._validations:
             return method._validations[param]
@@ -328,22 +426,21 @@ class Resource(object):
         """Returns the JSON version of the given raw Python object.
 
         :param raw: The return value of the resource method.
-        :type raw: Any valid Python object
+        :type raw: Any valid Python value
         :rtype: string
         """
         return json.dumps(raw)
 
     def to_text_xml(self, raw):
-        """Returns the XML string version of the given raw Python object.
+        """Returns the XML string version of the given raw Python object. Uses
+        :func:`_get_xml_value` which applies some heuristics for converting
+        data to XML.
 
-        Uses some heuristics to convert the data to XML:
-          - Default root tag is 'response', but that can be overwritting by
-            overwriting the variable :attr:`XML_ROOT_TAG` instance variable.
-          - In lists and dictionaries, the keys become the tag name.
-          - All other values are appended as is.
+        The default root tag is 'response', but that can be overwritting by
+        changing the :attr:`XML_ROOT_TAG` instance variable.
 
         :param raw: The return value of the resource method.
-        :type raw: Any valid Python object
+        :type raw: Any valid Python value
         :rtype: string
         """
         xml = self._get_xml_value(raw)
@@ -354,7 +451,21 @@ class Resource(object):
             return '<' + root + '>' + xml + '</' + root + '>'
 
     def _get_xml_value(self, value):
-        """Convert an individual value to an XML string."""
+        """Convert an individual value to an XML string. Calls itself
+        recursively for dictionaries and lists.
+
+        Uses some heuristics to convert the data to XML:
+            - In dictionaries, the keys become the tag name.
+            - In lists the tag name is 'child' with an order-attribute giving
+              the list index.
+            - All other values are included as is.
+
+        All values are escaped to fit into the XML document.
+
+        :param value: The value to convert to XML.
+        :type value: Any valid Python value
+        :rtype: string
+        """
         retval = []
         if isinstance(value, dict):
             for key, value in value.iteritems():
@@ -373,8 +484,13 @@ class Resource(object):
         return "".join(retval)
 
     def handle_exception(self, e, status=500):
-        """Handles the given exception: logs the exception, sets the response
-        code to 500 and outputs the exception message as an error message.
+        """Handle the given exception. Log, sets the response code and
+        output the exception message as an error message.
+
+        :param e: Exception which is being handled.
+        :type e: :class:`Exception`
+        :param status: Status code to set.
+        :type status: int
         """
         logger.exception(
             "An exception occured while handling the request: %s", e)
@@ -382,8 +498,11 @@ class Resource(object):
         self.response.status = status
 
     def handle_exception_404(self, e):
-        """Handles the given exception: logs the exception, sets the response
-        code to 404 and outputs a Not Found error message.
+        """Handle the given exception. Log, sets the response code to 404 and
+        output the exception message as an error message.
+
+        :param e: Exception which is being handled.
+        :type e: :class:`Exception`
         """
         logger.exception(
             "A 404 Not Found exception occured while handling the request.")
@@ -396,8 +515,9 @@ class Resource(object):
         self.set_response_content_md5()
 
     def set_response_content_type(self):
-        """Set the Content-Type in the response. Defaults to using the type
-        calculated by :func:`get_content_type` with UTF-8 charset.
+        """Set the Content-Type in the response. Uses the :attr:`type`
+        instance attribute which was set by :func:`get_content_type`. Also
+        declares a UTF-8 charset.
         """
         self.response.headers['Content-Type'] = self.type + '; charset=UTF-8'
 
@@ -420,7 +540,7 @@ class Help(Resource):
     XML_ROOT_TAG = 'help'
 
     def GET(self):
-        "Returns documentation for the application."
+        """Returns documentation for the application."""
         retval = []
         for res in self.application._resources:
             retval.append({
@@ -445,6 +565,9 @@ class Help(Resource):
 
     def _get_methods(self, res):
         """Return a dictionary of method descriptions for the given resource.
+
+        :param res: Resource class to get all HTTP methods from.
+        :type res: :class:`webob.resource.Resource`
         """
         retval = {}
         inst = res(request=webob.Request.blank('/'),
@@ -458,6 +581,13 @@ class Help(Resource):
         return retval
 
     def _get_doc(self, obj):
+        """Returns a slightly modified (stripped) docstring for the given
+        Python object. Returns an empty string if the object doesn't have any
+        documentation.
+
+        :param obj: Python object to get the docstring from.
+        :type obj: A method or class.
+        """
         doc = obj.__doc__
         if doc:
             return doc.strip()
@@ -465,7 +595,13 @@ class Help(Resource):
             return ''
 
     def _get_parameters(self, res, method):
-        """Return a parameters dictionary for the given resource/method."""
+        """Return a parameters dictionary for the given resource/method.
+
+        :param res: Resource class to get all HTTP methods from.
+        :type res: :class:`webob.resource.Resource`
+        :param method: The method to get parameters from.
+        :type method: Python function
+        """
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
         if method_params:
             method_params.pop(0) # pop the self off
@@ -486,15 +622,30 @@ class Help(Resource):
         return retval
 
     def _add_path_parameters(self, method_params, res, method):
-        """Extract all path parameters as they are always required even
-        though some methods may not have them in their definition.
+        """Extract all path parameters as they are always required even though
+        some methods may not have them in their definition.
+
+        :param method_params: Current list of parameters from the method.
+        :type method_params: Ordered list of method parameter names.
+        :param res: Resource class to get the path from.
+        :type res: :class:`webob.resource.Resource`
+        :param method: The method to get parameters from.
+        :type method: Python function
+
+        .. todo:: Parameter method is not required.
         """
         for param in re.findall('{([^}]+)}', res._path):
             if param not in method_params:
                 method_params.append(param)
 
     def _get_xml_value(self, value):
-        """Treat arrays better."""
+        """Overwritten _get_xml_value which uses the tag 'resource' for list
+        children. Calls :func:`Resource._get_xml_value` for all non-list
+        values.
+
+        :param value: The value to convert to HTML.
+        :type raw: Any valid Python value
+        """
         if isinstance(value, list):
             retval = []
             for key, value in enumerate(value):
@@ -881,7 +1032,15 @@ class Help(Resource):
         return re.compile('^ *', re.MULTILINE).sub('', "".join(retval))
 
     def to_text_html_overview(self, retval, raw):
-        """Add the overview table to the HTML output."""
+        """Add the overview table to the HTML output.
+
+        :param retval: The list of strings which is used to collect the HTML
+                       response.
+        :type retval: list
+        :param raw: The original return value of this resources :func:`GET`
+                    method.
+        :type raw: Dictionary
+        """
         retval.append('<table id="overview">')
         retval.append('<tr><th>Resource</th><th>Path</th><th>Description</th></tr>')
         for resource in raw:
@@ -891,7 +1050,15 @@ class Help(Resource):
         retval.append('</table>')
 
     def to_text_html_resources(self, retval, raw):
-        """Add the resources details to the HTML output."""
+        """Add the resources details to the HTML output.
+
+        :param retval: The list of strings which is used to collect the HTML
+                       response.
+        :type retval: list
+        :param raw: The original return value of this resources :func:`GET`
+                    method.
+        :type raw: Dictionary
+        """
         for resource in raw:
             retval.append('<div class="resource_details">')
             retval.append('<h2 id="{0}">{0}</h2>'.format(
@@ -910,7 +1077,14 @@ class Help(Resource):
             retval.append('</div>')
 
     def to_text_html_methods(self, retval, resource):
-        """Add the methods of this resource to the HTML output."""
+        """Add the methods of this resource to the HTML output.
+
+        :param retval: The list of strings which is used to collect the HTML
+                       response.
+        :type retval: list
+        :param resource: The documentation of one resource.
+        :type resource: Dictionary
+        """
         for method_name, method in resource['methods'].iteritems():
             retval.append('<h3 id="{0}_{1}">{1}</h3>'.format(
                 xml_escape(resource['name']), xml_escape(method_name)))

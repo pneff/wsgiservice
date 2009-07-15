@@ -14,7 +14,6 @@ Contents
    
    philosophy
    tutorial
-   modules/wsgiservice
    modules/reference
    todo
 

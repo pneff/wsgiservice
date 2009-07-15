@@ -5,24 +5,6 @@ response headers which are highly recommended or required. For example the
 ``Location`` header which should be set for 201 responses.
 
 The following status codes don't have a method here:
-
-   * 203 Non-Authoritative Information: Relevant for proxies, not for
-     services.
-   * 206 Partial Content: Range requests are not implemented, yet.
-   * 407 Proxy Authentication Required: Relevant for proxies, not for
-     services.
-   * 408 Request Timeout: Relevant for proxies, not for services.
-   * 411 Length Required: Should be checked by the HTTP server and/or webob.
-   * 413 Request Entity Too Large: Should be checked by the HTTP server and/or
-     webob.
-   * 414 Request-URI Too Long: Should be checked by the HTTP server and/or
-     webob.
-   * 415 Unsupported Media Type
-   * 416 Requested Range Not Satisfiable: Ranges are not implemented.
-   * 417 Expectation Failed: Should be checked by the HTTP server.
-   * 502 Bad Gateway: Relevant for proxies, not for services.
-   * 504 Gateway Timeout: Relevant for proxies, not for services.
-   * 505 HTTP Version Not Supported: Should be checked by the HTTP server.
 """
 from urlparse import urljoin
 from wsgiservice.exceptions import ResponseException
@@ -147,12 +129,19 @@ def raise_303(instance, location):
 
 def raise_304(instance):
     """Abort the current request with a 304 (Not Modified) response code.
+    Clears out the body of the response.
 
     :param instance: Resource instance (used to access the response)
     :type instance: :class:`webob.resource.Resource`
     :raises: :class:`webob.exceptions.ResponseException` of status 304
+
+    .. todo: The following headers MUST be output: Date, ETag and/or
+             Content-Location, Expires, Cache-Control, Vary. See :rfc:`2616`
+             section 10.3.5.
     """
     instance.response.status = 304
+    instance.response.body = ''
+    instance.response.body_raw = None
     raise ResponseException(instance.response)
 
 
@@ -314,6 +303,21 @@ def raise_412(instance, msg=None):
     :raises: :class:`webob.exceptions.ResponseException` of status 412
     """
     instance.response.status = 412
+    if msg:
+        instance.response.body_raw = {'error': msg}
+    raise ResponseException(instance.response)
+
+
+def raise_415(instance, msg=None):
+    """Abort the current request with a 415 (Unsupported Media Type) response
+    code. If the message is given it's output as an error message in the
+    response body (correctly converted to the requested MIME type).
+
+    :param instance: Resource instance (used to access the response)
+    :type instance: :class:`webob.resource.Resource`
+    :raises: :class:`webob.exceptions.ResponseException` of status 415
+    """
+    instance.response.status = 415
     if msg:
         instance.response.body_raw = {'error': msg}
     raise ResponseException(instance.response)

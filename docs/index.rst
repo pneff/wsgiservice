@@ -15,6 +15,7 @@ Contents
    philosophy
    tutorial
    modules/reference
+   http
    todo
 
 

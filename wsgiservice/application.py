@@ -15,11 +15,7 @@ class Application(object):
     :param resources: A list of :class:`wsgiservice.Resource` classes to be
                       served by this application.
 
-    .. todo:: Make downtime configurable with a file or something like that?
-       Could then send out a 503 response with proper Retry-After header.
-    .. todo:: Convert to requested charset with Accept-Charset header
     .. todo:: Easy deployment using good configuration file handling
-    .. todo:: Create usable REST API documentation from source
     """
 
     #: A list of request attributes to log. Each of these must be a valid

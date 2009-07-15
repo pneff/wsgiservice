@@ -209,6 +209,9 @@ class Resource(object):
             - If-Modified-Since and If-Unmodified-Since are checked against
               the modification date of this resource
               (:func:`assert_condition_last_modified`).
+
+        .. todo:: Return a 501 exception when any Content-* headers have been
+                  set in the request. (See :rfc:`2616`, section 9.6)
         """
         self.assert_condition_md5()
         etag = self.clean_etag(self.call_method('get_etag'))
@@ -364,8 +367,6 @@ class Resource(object):
         dictionaries are written by the decorator
         :func:`wsgiservice.decorators.validate`.
 
-        .. todo:: If the parameter has a default value then don't require a
-                  value to be specified.
         .. todo:: Allow validation by type (e.g. header, post, query, etc.)
 
         :param method: A function to get the validation information from (done

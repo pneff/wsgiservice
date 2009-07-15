@@ -40,7 +40,7 @@ class Router(object):
         """Compiles a list of match functions (using regular expressions) for
         the paths. Returns a list of two-item tuples consisting of the match
         function and the resource class. The list is in the same order as the
-        :param:`resources` parameter.
+        resources parameter.
 
         :param resources: List of :class:`wsgiservice.resource.Resource`
                           classes to be served by this application.

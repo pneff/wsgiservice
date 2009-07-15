@@ -1,0 +1,24 @@
+Summary of the important changes per release. See the CHANGELOG for the full
+list of changes.
+
+
+0.2.1: UNRELEASED
+    - Routing: Use extensions defined by resource in EXTENSION_MAP dictionary
+      instead of the hardcoded list of '.xml' and '.json'.
+    - Resource: Change EXTENSION_MAP to a list instead of a dictionary, so we
+      can rely on the order of entries. Breaks backwards-compatibility for
+      resources with a custom EXTENSION_MAP.
+    - Resource: Remove hard-coded setting of Content-Type and Content-MD5
+      response headers. Move into a new generic method set_response_headers
+      which in turn calls the two methods set_response_content_type and
+      set_response_content_md5. This allows for easier overwriting in
+      subclasses.
+    - Resource: Output valid XML when serializing lists. Each child is now
+      <child order="N"> instead of just <N> (where N is the array index).
+    - Help resource: Sort the resources by name, mark parameters with
+      validation rules as mandatory.
+    - Documentation: Add a lot of additional documentation.
+
+
+0.2: June 29, 2009
+    - Initial packaged release of WsgiService.

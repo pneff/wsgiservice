@@ -354,9 +354,9 @@ class Resource(object):
                 retval.append('</' + xml_escape(str(key)) + '>')
         elif isinstance(value, list):
             for key, value in enumerate(value):
-                retval.append('<' + xml_escape(str(key)) + '>')
+                retval.append('<child order="' + xml_escape(str(key)) + '">')
                 retval.append(self._get_xml_value(value))
-                retval.append('</' + xml_escape(str(key)) + '>')
+                retval.append('</child>')
         elif isinstance(value, bool):
             retval.append(xml_escape(str(value).lower()))
         else:

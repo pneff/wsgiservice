@@ -11,10 +11,11 @@ from wsgiservice.exceptions import ValidationException
 
 logger = logging.getLogger(__name__)
 
+
 class Resource(object):
     """Base class for all WsgiService resources. A resourse is a unique REST
     endpoint which accepts different methods for different actions.
-    
+
     For each HTTP call the corresponding method (equal to the HTTP method)
     will be called.
 
@@ -53,13 +54,13 @@ class Resource(object):
         self.response = response
         self.path_params = path_params
         self.application = application
-    
+
     def OPTIONS(self):
         """Default implementation of the OPTIONS verb. Outputs a list of
         allowed methods on this resource in the `Allow` response header.
         """
         self.response.headers['Allow'] = self.get_allowed_methods()
-    
+
     def __call__(self):
         """Main entry point for calling this resource. Handles the method
         dispatching, response conversion, etc. for this resource.
@@ -90,7 +91,7 @@ class Resource(object):
         self.convert_response()
         self.set_response_headers()
         return self.response
-    
+
     def get_resource(self, resource, **kwargs):
         """Returns a new instance of the resource class passed in as resource.
         This is a helper to make future-compatibility easier when new
@@ -98,7 +99,7 @@ class Resource(object):
         return resource(request=self.request, response=self.response,
             path_params=self.path_params, application=self.application,
             **kwargs)
-    
+
     def get_method(self, method=None):
         """Returns the method to call on this instance as a string. Raises a
         HTTP exception if no method can be found. Aborts with a 405 status
@@ -118,7 +119,7 @@ class Resource(object):
         else:
             # Unknown HTTP methods => 501 Not Implemented
             raise_501(self)
-    
+
     def get_content_type(self):
         """Returns the Content Type to serve from either the extension or the
         Accept headers. Uses the :attr:`EXTENSION_MAP` list for all the
@@ -136,12 +137,13 @@ class Resource(object):
                 self.response.vary.append('Accept')
             types = [mime for ext, mime in self.EXTENSION_MAP]
             return self.request.accept.first_match(types)
-    
+
     def handle_ignored_resources(self):
         """Ignore robots.txt and favicon.ico GET requests."""
-        if self.method in ('GET', 'HEAD') and self.request.path_qs in (self.IGNORED_PATHS):
+        if (self.method in ('GET', 'HEAD') and
+                self.request.path_qs in self.IGNORED_PATHS):
             raise_404(self)
-    
+
     def assert_conditions(self):
         """Handles various HTTP conditions and raises HTTP exceptions to
         abort the request.
@@ -158,7 +160,7 @@ class Resource(object):
         self.response.last_modified = self.call_method('get_last_modified')
         self.assert_condition_etag()
         self.assert_condition_last_modified()
-    
+
     def assert_condition_md5(self):
         """If the `Content-MD5` request header is present in the request it's
         verified against the MD5 hash of the request body. If they don't
@@ -168,7 +170,7 @@ class Resource(object):
             body_md5 = hashlib.md5(self.request.body_file.read()).hexdigest()
             if body_md5 != self.request.headers['Content-MD5']:
                 raise_400(self, msg='Invalid Content-MD5 request header.')
-    
+
     def assert_condition_etag(self):
         """If the resource has an ETag (see :func:`get_etag`) the request
         headers `If-Match` and `If-None-Match` are verified. May abort the
@@ -177,13 +179,15 @@ class Resource(object):
         if self.response.etag:
             etag = self.response.etag.replace('"', '')
             if not etag in self.request.if_match:
-                raise_412(self, 'If-Match request header does not the resource ETag.')
+                raise_412(self,
+                    'If-Match request header does not the resource ETag.')
             if etag in self.request.if_none_match:
                 if self.request.method in ('GET', 'HEAD'):
                     raise_304(self)
                 else:
-                    raise_412(self, 'If-None-Match request header matches resource ETag.')
-    
+                    raise_412(self,
+                        'If-None-Match request header matches resource ETag.')
+
     def assert_condition_last_modified(self):
         """If the resource has a last modified date (see
         :func:`get_last_modified`) the request headers `If-Modified-Since` and
@@ -193,18 +197,20 @@ class Resource(object):
         rq = self.request
         rs = self.response
         if rs.last_modified:
-            if rq.if_modified_since and rs.last_modified <= rq.if_modified_since:
+            rsl = rs.last_modified
+            if rq.if_modified_since and rsl <= rq.if_modified_since:
                 raise_304(self)
-            if rq.if_unmodified_since and rs.last_modified > rq.if_unmodified_since:
-                raise_412(self, 'Resource is newer than the If-Unmodified-Since request header.')
-    
+            if rq.if_unmodified_since and rsl > rq.if_unmodified_since:
+                raise_412(self, 'Resource is newer than the '
+                    'If-Unmodified-Since request header.')
+
     def get_etag(self):
         """Returns a string to be used as the ETag for this resource. Used to
         set the ``ETag`` response headers and for conditional requests using
         the ``If-Match`` and ``If-None-Match`` request headers.
         """
         return None
-    
+
     def clean_etag(self, etag):
         """Cleans the ETag as returned by get_etag. Will wrap it in quotes
         and append the extension for the current MIME type.
@@ -218,8 +224,8 @@ class Resource(object):
                     break
             if extension:
                 etag += '_' + extension
-            self.response.etag = '"' +  etag + '"'
-    
+            self.response.etag = '"' + etag + '"'
+
     def get_last_modified(self):
         """Return a :class:`datetime.datetime` object of the when the resource
         was last modified. Used to set the ``Last-Modified`` response header
@@ -229,7 +235,7 @@ class Resource(object):
         :rtype: :class:`datetime.datetime`
         """
         return None
-    
+
     def get_allowed_methods(self):
         """Returns a coma-separated list of method names that are allowed on
         this instance. Useful to set the ``Allowed`` response header.
@@ -237,7 +243,7 @@ class Resource(object):
         return ", ".join([method for method in dir(self)
             if method.upper() == method
             and callable(getattr(self, method))])
-    
+
     def call_method(self, method_name):
         """Call an instance method filling in all the method parameters based
         on their names. The parameters are filled in from the following
@@ -270,13 +276,13 @@ class Resource(object):
             self.validate_param(method, param, value)
             params.append(value)
         return method(*params)
-    
+
     def validate_param(self, method, param, value):
         """Validates the parameter according to the configurations in the
         _validations dictionary of either the method or the instance. This
         dictionaries are written by the decorator
         :func:`wsgiservice.decorators.validate`.
-        
+
         .. todo:: If the parameter has a default value then don't require a
                   value to be specified.
         .. todo:: Allow validation by type (e.g. header, post, query, etc.)
@@ -285,22 +291,25 @@ class Resource(object):
         if not rules:
             return
         if value is None or len(str(value)) == 0:
-            raise ValidationException("Value for {0} must not be empty.".format(param))
+            raise ValidationException(
+                "Value for {0} must not be empty.".format(param))
         elif 're' in rules and rules['re']:
             if not re.search('^' + rules['re'] + '$', value):
-                raise ValidationException("{0} value {1} does not validate.".format(param, value))
-    
+                raise ValidationException(
+                    "{0} value {1} does not validate.".format(param, value))
+
     def _get_validation(self, method, param):
         """Return the correct validations dictionary for this parameter or
         None.
         """
         if hasattr(method, '_validations') and param in method._validations:
             return method._validations[param]
-        elif hasattr(method.im_class, '_validations') and param in method.im_class._validations:
+        elif (hasattr(method.im_class, '_validations') and
+                param in method.im_class._validations):
             return method.im_class._validations[param]
         else:
             return None
-    
+
     def convert_response(self):
         """Finish filling the instance's response object so it's ready to be
         served to the client. This includes converting the body_raw property
@@ -314,25 +323,25 @@ class Resource(object):
                     self.response.body = getattr(self, to_type_method)(
                         self.response.body_raw)
             del self.response.body_raw
-    
+
     def to_application_json(self, raw):
         """Returns the JSON version of the given raw Python object.
-        
+
         :param raw: The return value of the resource method.
         :type raw: Any valid Python object
         :rtype: string
         """
         return json.dumps(raw)
-    
+
     def to_text_xml(self, raw):
         """Returns the XML string version of the given raw Python object.
-        
+
         Uses some heuristics to convert the data to XML:
           - Default root tag is 'response', but that can be overwritting by
             overwriting the variable :attr:`XML_ROOT_TAG` instance variable.
           - In lists and dictionaries, the keys become the tag name.
           - All other values are appended as is.
-        
+
         :param raw: The return value of the resource method.
         :type raw: Any valid Python object
         :rtype: string
@@ -343,7 +352,7 @@ class Resource(object):
         else:
             root = self.XML_ROOT_TAG
             return '<' + root + '>' + xml + '</' + root + '>'
-    
+
     def _get_xml_value(self, value):
         """Convert an individual value to an XML string."""
         retval = []
@@ -362,20 +371,22 @@ class Resource(object):
         else:
             retval.append(xml_escape(str(value)))
         return "".join(retval)
-    
+
     def handle_exception(self, e, status=500):
         """Handles the given exception: logs the exception, sets the response
         code to 500 and outputs the exception message as an error message.
         """
-        logger.exception("An exception occured while handling the request: %s", e)
+        logger.exception(
+            "An exception occured while handling the request: %s", e)
         self.response.body_raw = {'error': str(e)}
         self.response.status = status
-    
+
     def handle_exception_404(self, e):
         """Handles the given exception: logs the exception, sets the response
         code to 404 and outputs a Not Found error message.
         """
-        logger.exception("A 404 Not Found exception occured while handling the request.")
+        logger.exception(
+            "A 404 Not Found exception occured while handling the request.")
         self.response.body_raw = {'error': 'Not Found'}
         self.response.status = 404
 
@@ -397,11 +408,10 @@ class Resource(object):
         self.response.content_md5 = hashlib.md5(self.response.body).hexdigest()
 
 
-
 @mount('/_internal/help')
 class Help(Resource):
     """Provides documentation for all resources of the current application.
-    
+
     .. todo:: Allow documentation of output.
     .. todo:: Use first sentence of docstring for summary, add bigger version
               at the bottom.
@@ -430,31 +440,30 @@ class Help(Resource):
         retval = [(r['name'], r) for r in retval]
         retval.sort()
         retval = [r[1] for r in retval]
-        
+
         return retval
 
     def _get_methods(self, res):
         """Return a dictionary of method descriptions for the given resource.
         """
         retval = {}
-        instance = res(request=webob.Request.blank('/'),
+        inst = res(request=webob.Request.blank('/'),
             response=webob.Response(), path_params={})
-        methods = [m.strip() for m in instance.get_allowed_methods().split(',')]
+        methods = [m.strip() for m in inst.get_allowed_methods().split(',')]
         for method_name in methods:
             method = getattr(res, method_name)
             retval[method_name] = {
                 'desc': self._get_doc(method),
-                'parameters': self._get_parameters(res, method)
-            }
+                'parameters': self._get_parameters(res, method)}
         return retval
-    
+
     def _get_doc(self, obj):
         doc = obj.__doc__
         if doc:
             return doc.strip()
         else:
             return ''
-    
+
     def _get_parameters(self, res, method):
         """Return a parameters dictionary for the given resource/method."""
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
@@ -499,7 +508,7 @@ class Help(Resource):
     def to_text_html(self, raw):
         """Returns the HTML string version of the given raw Python object.
         Hard-coded to return a nicely-presented service information document.
-        
+
         :param raw: The return value of the resource method.
         :type raw: Any valid Python object
         :rtype: string
@@ -523,7 +532,7 @@ class Help(Resource):
                     h2 {margin-top: 0;}
                     .resource_details {padding-top: 2em;border-top: 1px dotted #ccc;margin-top: 2em;}
                     .method_details {margin-left: 2em;}
-                    
+
                     /* JS form */
                     form {
                         padding: 1em;
@@ -753,7 +762,7 @@ class Help(Resource):
                     for (header in input['headers']) {
                         xhr.setRequestHeader(header, input['headers'][header]);
                     }
-                    xhr.send(data); 
+                    xhr.send(data);
 
                     return false;
                 };
@@ -899,7 +908,7 @@ class Help(Resource):
             retval.append('</table>')
             self.to_text_html_methods(retval, resource)
             retval.append('</div>')
-    
+
     def to_text_html_methods(self, retval, resource):
         """Add the methods of this resource to the HTML output."""
         for method_name, method in resource['methods'].iteritems():

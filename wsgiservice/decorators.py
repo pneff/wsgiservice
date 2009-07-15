@@ -4,6 +4,7 @@ from decorator import decorator
 from datetime import timedelta
 from webob import timedelta_to_seconds
 
+
 def mount(path):
     """Decorator. Apply on a :class:`wsgiservice.Resource` to mount it at the
     given path. The same can be achived by setting the ``_path`` attribute on
@@ -13,6 +14,7 @@ def mount(path):
                  :class:`wsgiservice.routing.Router` for a description of how
                  this path has to be formatted.
     """
+
     def wrap(cls):
         cls._path = path
         return cls
@@ -24,7 +26,7 @@ def validate(name, re=None, doc=None):
     methods to validates a parameter on input. When a parameter does not
     validate, a :class:`wsgiservice.exceptions.ValidationException` exception
     will be thrown.
-    
+
     :param name: Name of the input parameter to validate.
     :type name: string
     :param re: Regular expression to search for in the input parameter. If
@@ -33,18 +35,20 @@ def validate(name, re=None, doc=None):
     :param doc: Parameter description for the API documentation.
     :type doc: string
     """
+
     def wrap(cls_or_func):
         if not hasattr(cls_or_func, '_validations'):
             cls_or_func._validations = {}
-        cls_or_func._validations[name] = {'re':re, 'doc':doc}
+        cls_or_func._validations[name] = {'re': re, 'doc': doc}
         return cls_or_func
     return wrap
+
 
 def expires(duration, currtime=time.time):
     """Decorator. Apply on a :class:`wsgiservice.Resource` method to set the
     max-age cache control parameter to the given duration. Also calculates
     the correct ``Expires`` response header.
-    
+
     :param duration: Age which this resource may have before becoming stale.
     :type duration: :mod:`datetime.timedelta`
     :param currtime: Function used to find out the current UTC time. This is
@@ -53,6 +57,7 @@ def expires(duration, currtime=time.time):
     """
     if isinstance(duration, timedelta):
         duration = timedelta_to_seconds(duration)
+
     @decorator
     def _expires(func, *args, **kwargs):
         "Sets the expirations header to the given duration."

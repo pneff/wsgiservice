@@ -7,6 +7,7 @@ import wsgiservice.resource
 
 logger = logging.getLogger(__name__)
 
+
 class Application(object):
     """WSGI application wrapping a set of WsgiService resources. This class
     can be used as a WSGI application according to :pep:`333`.
@@ -35,7 +36,7 @@ class Application(object):
     def __init__(self, resources):
         self._resources = resources
         self._urlmap = wsgiservice.routing.Router(resources)
-    
+
     def __call__(self, environ, start_response):
         """WSGI entry point. Serve the best matching resource for the current
         request.
@@ -44,7 +45,7 @@ class Application(object):
         self._log_request(request)
         response = self._handle_request(request)
         return response(environ, start_response)
-    
+
     def _log_request(self, request):
         """Log the most important parts of this request."""
         msg = []
@@ -56,7 +57,7 @@ class Application(object):
             if d in request.headers and request.headers[d]:
                 msg.append(d + ': ' + repr(request.headers[d]))
         logger.info(', '.join(msg))
-    
+
     def _handle_request(self, request):
         """Finds the resource to which a request maps and then calls it.
         Instantiates and returns a :class:`webob.Response` object."""

@@ -7,6 +7,7 @@ import wsgiservice
 import wsgiservice.application
 import wsgiservice.exceptions
 
+
 def test_getapp():
     app = wsgiservice.get_app(globals())
     print app
@@ -22,6 +23,7 @@ def test_getapp():
     assert app._resources[4] in resources
     assert app._resources[5] in resources
 
+
 def test_app_handle_404():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/foo')
@@ -29,6 +31,7 @@ def test_app_handle_404():
     print res
     assert res.status == '404 Not Found'
     assert res.body == ''
+
 
 def test_app_handle_method_not_allowed():
     app = wsgiservice.get_app(globals())
@@ -39,6 +42,7 @@ def test_app_handle_method_not_allowed():
     assert res.body == ''
     assert res._headers['Allow'] == 'OPTIONS, POST, PUT'
 
+
 def test_app_handle_method_not_known():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res2', {'REQUEST_METHOD': 'PATCH'})
@@ -47,6 +51,7 @@ def test_app_handle_method_not_known():
     assert res.status == '501 Not Implemented'
     assert res.body == ''
     assert res._headers['Allow'] == 'OPTIONS, POST, PUT'
+
 
 def test_app_handle_response_201_abs():
     app = wsgiservice.get_app(globals())
@@ -57,6 +62,7 @@ def test_app_handle_response_201_abs():
     assert res.body == ''
     assert res.location == 'http://localhost/res2/test'
 
+
 def test_app_handle_response_201_rel():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res2', {'REQUEST_METHOD': 'PUT'})
@@ -66,6 +72,7 @@ def test_app_handle_response_201_rel():
     assert res.body == ''
     assert res.location == 'http://localhost/res2/foo'
 
+
 def test_app_handle_options():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res2', {'REQUEST_METHOD': 'OPTIONS'})
@@ -73,6 +80,7 @@ def test_app_handle_options():
     print res
     assert res.status == '200 OK'
     assert res._headers['Allow'] == 'OPTIONS, POST, PUT'
+
 
 def test_app_get_simple():
     app = wsgiservice.get_app(globals())
@@ -85,7 +93,9 @@ def test_app_get_simple():
     print res
     assert res.status == '200 OK'
     assert res._headers['Content-MD5'] == '8d5a8ef21b4afff94c937faabfdf11fa'
-    assert res.body == "<response>GET was called with id theid, foo None</response>"
+    assert res.body == "<response>GET was called with id theid, " \
+        "foo None</response>"
+
 
 def test_app_head_revert_to_get_simple():
     app = wsgiservice.get_app(globals())
@@ -100,6 +110,7 @@ def test_app_head_revert_to_get_simple():
     assert res.status == '200 OK'
     assert res.body == ''
 
+
 def test_app_post_simple():
     app = wsgiservice.get_app(globals())
     body = 'foo=42&baz=foobar'
@@ -110,7 +121,9 @@ def test_app_post_simple():
     res = app._handle_request(req)
     print res
     assert res.status == '200 OK'
-    assert res.body == "<response>POST was called with id theid, foo 42</response>"
+    assert res.body == "<response>POST was called with id theid, " \
+        "foo 42</response>"
+
 
 def test_app_wsgi():
     app = wsgiservice.get_app(globals())
@@ -125,13 +138,16 @@ def test_app_wsgi():
     mox.Verify(start_response)
     assert res == ['"GET was called with id theid, foo None"']
 
+
 def test_validation_method():
     inst = Resource1(None, None, None)
     inst.validate_param(inst.GET, 'foo', '9')
 
+
 def test_validation_class():
     inst = Resource1(None, None, None)
     inst.validate_param(inst.GET, 'id', 'anyid')
+
 
 def test_validation_with_re_none_value():
     inst = Resource1(None, None, None)
@@ -143,6 +159,7 @@ def test_validation_with_re_none_value():
     else:
         assert False, "Expected an exception!"
 
+
 def test_validation_with_re_mismatch():
     inst = Resource1(None, None, None)
     try:
@@ -152,6 +169,7 @@ def test_validation_with_re_mismatch():
         assert str(e) == 'id value fo does not validate.'
     else:
         assert False, "Expected an exception!"
+
 
 def test_validation_with_re_mismatch_toolong():
     inst = Resource1(None, None, None)
@@ -163,6 +181,7 @@ def test_validation_with_re_mismatch_toolong():
     else:
         assert False, "Expected an exception!"
 
+
 def test_with_expires():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res3')
@@ -171,6 +190,7 @@ def test_with_expires():
     print res._headers
     assert res._headers['Cache-Control'] == 'max-age=86400'
 
+
 def test_with_expires_calculations():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4')
@@ -178,6 +198,7 @@ def test_with_expires_calculations():
     print res._headers
     assert res._headers['Cache-Control'] == 'max-age=138'
     assert res._headers['Expires'] == 'Mon, 20 Apr 2009 17:55:45 GMT'
+
 
 def test_with_expires_calculations_double_wrapped():
     app = wsgiservice.get_app(globals())
@@ -196,6 +217,7 @@ def test_etag_generate():
     print res._headers
     assert res._headers['ETag'] == '"myid_xml"'
 
+
 def test_etag_generate_json():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid', {'HTTP_ACCEPT': 'application/json'})
@@ -203,12 +225,14 @@ def test_etag_generate_json():
     print res
     assert res._headers['ETag'] == '"myid_json"'
 
+
 def test_etag_generate_json_ext():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4.json?id=myid')
     res = app._handle_request(req)
     print res
     assert res._headers['ETag'] == '"myid_json"'
+
 
 def test_etag_if_match_false():
     app = wsgiservice.get_app(globals())
@@ -219,6 +243,7 @@ def test_etag_if_match_false():
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '412 Precondition Failed'
 
+
 def test_etag_if_match_true():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid', {'HTTP_IF_MATCH': '"myid_xml"'})
@@ -226,6 +251,7 @@ def test_etag_if_match_true():
     print res
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '200 OK'
+
 
 def test_etag_if_match_not_set():
     app = wsgiservice.get_app(globals())
@@ -235,6 +261,7 @@ def test_etag_if_match_not_set():
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '200 OK'
 
+
 def test_etag_if_none_match_get_true():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid', {'HTTP_IF_NONE_MATCH': '"myid_xml"'})
@@ -243,6 +270,7 @@ def test_etag_if_none_match_get_true():
     assert res.body == ''
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
+
 
 def test_etag_if_none_match_head_true():
     app = wsgiservice.get_app(globals())
@@ -254,6 +282,7 @@ def test_etag_if_none_match_head_true():
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
 
+
 def test_etag_if_none_match_post_true():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
@@ -262,6 +291,7 @@ def test_etag_if_none_match_post_true():
     print res
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '412 Precondition Failed'
+
 
 def test_etag_if_none_match_false():
     app = wsgiservice.get_app(globals())
@@ -272,12 +302,14 @@ def test_etag_if_none_match_false():
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '200 OK'
 
+
 def test_modified_generate():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid')
     res = app._handle_request(req)
     print res._headers
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
+
 
 def test_if_modified_since_false():
     app = wsgiservice.get_app(globals())
@@ -290,6 +322,7 @@ def test_if_modified_since_false():
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
 
+
 def test_if_modified_since_true():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
@@ -298,6 +331,7 @@ def test_if_modified_since_true():
     print res
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res.status == '200 OK'
+
 
 def test_if_unmodified_since_false():
     app = wsgiservice.get_app(globals())
@@ -308,6 +342,7 @@ def test_if_unmodified_since_false():
     assert res._headers['ETag'] == '"myid_xml"'
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res.status == '412 Precondition Failed'
+
 
 def test_if_unmodified_since_false_head():
     app = wsgiservice.get_app(globals())
@@ -321,6 +356,7 @@ def test_if_unmodified_since_false_head():
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res.status == '412 Precondition Failed'
 
+
 def test_if_unmodified_since_false_post():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
@@ -333,6 +369,7 @@ def test_if_unmodified_since_false_post():
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res.status == '412 Precondition Failed'
 
+
 def test_if_unmodified_since_true():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res4?id=myid',
@@ -343,6 +380,7 @@ def test_if_unmodified_since_true():
     assert res._headers['ETag'] == '"myid_xml"'
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res.status == '200 OK'
+
 
 def test_verify_content_md5_invalid():
     app = wsgiservice.get_app(globals())
@@ -356,7 +394,9 @@ def test_verify_content_md5_invalid():
     assert 'ETag' not in res._headers
     assert 'Last-Modified' not in res._headers
     assert res.status == '400 Bad Request'
-    assert res.body == '<response><error>Invalid Content-MD5 request header.</error></response>'
+    assert res.body == '<response><error>Invalid Content-MD5 request ' \
+        'header.</error></response>'
+
 
 def test_verify_content_md5_valid():
     app = wsgiservice.get_app(globals())
@@ -367,13 +407,15 @@ def test_verify_content_md5_valid():
     print res
     assert res.status == '200 OK'
 
+
 def test_exception_json():
     app = wsgiservice.get_app(globals())
-    req = Request.blank('/res5?throw=1', { 'HTTP_ACCEPT': 'application/json' })
+    req = Request.blank('/res5?throw=1', {'HTTP_ACCEPT': 'application/json'})
     res = app._handle_request(req)
     print res
     assert res.status == '500 Internal Server Error'
     assert res.body == '{"error": "Some random exception."}'
+
 
 def test_exception_xml():
     app = wsgiservice.get_app(globals())
@@ -381,7 +423,9 @@ def test_exception_xml():
     res = app._handle_request(req)
     print res
     assert res.status == '500 Internal Server Error'
-    assert res.body == '<response><error>Some random exception.</error></response>'
+    assert res.body == '<response><error>Some random exception.' \
+        '</error></response>'
+
 
 def test_res6_default():
     app = wsgiservice.get_app(globals())
@@ -390,6 +434,7 @@ def test_res6_default():
     print res
     assert res.status == '200 OK'
     assert res.body == '<response>works</response>'
+
 
 def test_notfound_xml():
     app = wsgiservice.get_app(globals())
@@ -404,30 +449,41 @@ class AbstractResource(wsgiservice.Resource):
     """This resource should not be added to the application as it doesn't
     have a path."""
 
+
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'
     _validations = {'id': {'re': '[a-z]{5}'}}
+
     def GET(self, id, foo):
         return 'GET was called with id {0}, foo {1}'.format(id, foo)
+
     def POST(self, id, foo):
         return 'POST was called with id {0}, foo {1}'.format(id, foo)
+
     POST._validations = {'foo': {'re': '[0-9]+'}}
+
 
 class Resource2(wsgiservice.Resource):
     _path = '/res2'
+
     def POST(self):
         wsgiservice.raise_201(self, '/res2/test')
+
     def PUT(self):
         wsgiservice.raise_201(self, 'foo')
 
+
 class Resource3(AbstractResource):
     _path = '/res3'
+
     @wsgiservice.expires(timedelta(days=1))
     def GET(self, id):
         return "Called with id: {0}".format(id)
 
+
 class Resource4(wsgiservice.Resource):
     _path = '/res4'
+
     @wsgiservice.expires(138, lambda: 1240250007)
     def GET(self, id):
         return "Called with id: {0}".format(id)
@@ -446,19 +502,25 @@ class Resource4(wsgiservice.Resource):
         from datetime import datetime
         return datetime(2009, 5, 1, 14, 30, tzinfo=UTC)
 
+
 class Resource5(wsgiservice.Resource):
     _path = '/res5'
+
     def GET(self, throw):
         if throw == '1':
             raise Exception("Some random exception.")
         else:
             return 'Throwing nothing'
 
+
 class Resource6(wsgiservice.Resource):
+
     class DummyException(Exception):
         pass
+
     NOT_FOUND = (KeyError, DummyException)
     _path = '/res6/{id}'
     items = {'uid': 'works'}
+
     def GET(self, id):
         return self.items[id]

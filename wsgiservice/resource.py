@@ -604,7 +604,7 @@ class Help(Resource):
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
         if method_params:
             method_params.pop(0) # pop the self off
-        self._add_path_parameters(method_params, res, method)
+        self._add_path_parameters(method_params, res)
         retval = {}
         for param in method_params:
             is_path_param = '{' + param + '}' in res._path
@@ -620,7 +620,7 @@ class Help(Resource):
                 retval[param]['desc'] = validation['doc'] or ''
         return retval
 
-    def _add_path_parameters(self, method_params, res, method):
+    def _add_path_parameters(self, method_params, res):
         """Extract all path parameters as they are always required even though
         some methods may not have them in their definition.
 
@@ -628,10 +628,6 @@ class Help(Resource):
         :type method_params: Ordered list of method parameter names.
         :param res: Resource class to get the path from.
         :type res: :class:`webob.resource.Resource`
-        :param method: The method to get parameters from.
-        :type method: Python function
-
-        .. todo:: Parameter method is not required.
         """
         for param in re.findall('{([^}]+)}', res._path):
             if param not in method_params:

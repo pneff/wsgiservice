@@ -464,13 +464,13 @@ class Help(Resource):
         retval = {}
         for param in method_params:
             is_path_param = '{' + param + '}' in res._path
+            validation = self._get_validation(method, param)
             retval[param] = {
                 'path_param': is_path_param,
-                'mandatory': is_path_param,
+                'mandatory': is_path_param or validation,
                 'validate_re': None,
                 'desc': '',
             }
-            validation = self._get_validation(method, param)
             if validation:
                 retval[param]['validate_re'] = validation['re']
                 retval[param]['desc'] = validation['doc'] or ''

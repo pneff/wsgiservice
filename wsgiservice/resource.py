@@ -88,6 +88,7 @@ class Resource(object):
         except Exception, e:
             self.handle_exception(e)
         self.convert_response()
+        self.set_response_headers()
         return self.response
     
     def get_resource(self, resource, **kwargs):
@@ -313,8 +314,6 @@ class Resource(object):
                     self.response.body = getattr(self, to_type_method)(
                         self.response.body_raw)
             del self.response.body_raw
-        self.response.headers['Content-Type'] = self.type + '; charset=UTF-8'
-        self.response.content_md5 = hashlib.md5(self.response.body).hexdigest()
     
     def to_application_json(self, raw):
         """Returns the JSON version of the given raw Python object.
@@ -379,6 +378,23 @@ class Resource(object):
         logger.exception("A 404 Not Found exception occured while handling the request.")
         self.response.body_raw = {'error': 'Not Found'}
         self.response.status = 404
+
+    def set_response_headers(self):
+        """Sets all the calculated response headers."""
+        self.set_response_content_type()
+        self.set_response_content_md5()
+
+    def set_response_content_type(self):
+        """Set the Content-Type in the response. Defaults to using the type
+        calculated by :func:`get_content_type` with UTF-8 charset.
+        """
+        self.response.headers['Content-Type'] = self.type + '; charset=UTF-8'
+
+    def set_response_content_md5(self):
+        """Set the Content-MD5 response header. Calculated from the the
+        response body by creating the MD5 hash from it.
+        """
+        self.response.content_md5 = hashlib.md5(self.response.body).hexdigest()
 
 
 

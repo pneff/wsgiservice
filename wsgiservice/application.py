@@ -70,7 +70,7 @@ class Application(object):
         for d in self.LOG_HEADERS:
             if d in request.headers and request.headers[d]:
                 msg.append(d + ': ' + repr(request.headers[d]))
-        logger.info(', '.join(msg))
+        logger.info("Reqest information: %s", ', '.join(msg))
 
     def _handle_request(self, request):
         """Finds the resource to which a request maps and then calls it.

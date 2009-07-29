@@ -48,10 +48,10 @@ class User(Resource):
 
     def to_text_xml(self, retval):
         if isinstance(retval, dict) and 'saved' in retval:
-            return '<status saved="{0}"><id>{1}</id></status>'.format(
+            return '<status saved="%s"><id>%s</id></status>' % (
                 retval['saved'], retval['id'])
         elif isinstance(retval, dict) and 'deleted' in retval:
-            return '<status deleted="{0}"><id>{1}</id></status>'.format(
+            return '<status deleted="%s"><id>%s</id></status>' % (
                 retval['deleted'], retval['id'])
         else:
             return Resource.to_text_xml(self, retval)

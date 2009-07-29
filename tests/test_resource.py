@@ -1,32 +1,10 @@
 # -*- coding: utf-8 -*-
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 import webob
 import wsgiservice
-
-
-def test_mount():
-    """mount decorator adds the path as an attribute _path."""
-
-    @wsgiservice.mount('/{id}')
-    class Document(wsgiservice.Resource):
-        pass
-
-    assert Document.__name__ == 'Document'
-    assert Document._path == '/{id}'
-
-
-def test_validate_resource():
-    """validate decorator adds rules to the _validations attribute list."""
-
-    @wsgiservice.validate('id', re=r'[-0-9a-zA-Z]{36}',
-        doc='Document ID, must be a valid UUID.')
-    class User(wsgiservice.Resource):
-        pass
-
-    print User._validations
-    assert User.__name__ == 'User'
-    assert User._validations['id'] == {'re': r'[-0-9a-zA-Z]{36}',
-        'doc': 'Document ID, must be a valid UUID.'}
 
 
 def test_validate_method():

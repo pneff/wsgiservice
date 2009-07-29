@@ -1,4 +1,13 @@
 from setuptools import setup, find_packages
+import sys
+
+requirements = [
+    'decorator',
+    'webob',
+]
+if sys.version_info < (2, 6):
+    requirements += ['simplejson']
+
 setup(
     name='WsgiService',
     version='0.2.1',
@@ -6,10 +15,7 @@ setup(
     author="Patrice Neff",
     url='http://github.com/pneff/wsgiservice/tree/master',
     packages=find_packages(),
-    install_requires=[
-        'decorator',
-        'webob',
-    ],
+    install_requires=requirements,
     tests_require=[
         'nose',
         'mox',

@@ -498,10 +498,10 @@ class Resource1(wsgiservice.Resource):
     _validations = {'id': {'re': '[a-z]{5}'}}
 
     def GET(self, id, foo):
-        return 'GET was called with id {0}, foo {1}'.format(id, foo)
+        return 'GET was called with id %s, foo %s' % (id, foo)
 
     def POST(self, id, foo):
-        return 'POST was called with id {0}, foo {1}'.format(id, foo)
+        return 'POST was called with id %s, foo %s' % (id, foo)
 
     POST._validations = {'foo': {'re': '[0-9]+'}}
 
@@ -521,7 +521,7 @@ class Resource3(AbstractResource):
 
     @wsgiservice.expires(timedelta(days=1))
     def GET(self, id):
-        return "Called with id: {0}".format(id)
+        return "Called with id: %s" % id
 
 
 class Resource4(wsgiservice.Resource):
@@ -529,12 +529,12 @@ class Resource4(wsgiservice.Resource):
 
     @wsgiservice.expires(138, lambda: 1240250007)
     def GET(self, id):
-        return "Called with id: {0}".format(id)
+        return "Called with id: %s" % id
 
     @wsgiservice.expires(139, lambda: 1240250007)
     @wsgiservice.expires(138, lambda: 1240250007)
     def POST(self, id):
-        return "POST Called with id: {0}".format(id)
+        return "POST Called with id: %s" % id
 
     def get_etag(self, id):
         if id:

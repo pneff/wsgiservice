@@ -53,7 +53,7 @@ class Router(object):
             for match in search_vars(path):
                 regexp += re.escape(path[prev_pos:match.start()])
                 # .+? - match any character but non-greedy
-                regexp += '(?P<{0}>.+?)'.format(match.group(1))
+                regexp += '(?P<%s>.+?)' % match.group(1)
                 prev_pos = match.end()
             regexp += re.escape(path[prev_pos:])
             # Allow an extension to overwrite the mime type

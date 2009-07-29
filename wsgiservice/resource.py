@@ -1,6 +1,9 @@
 import hashlib
 import inspect
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 import logging
 import re
 import webob
@@ -383,11 +386,11 @@ class Resource(object):
             return
         if value is None or len(str(value)) == 0:
             raise ValidationException(
-                "Value for {0} must not be empty.".format(param))
+                "Value for %s must not be empty." % param)
         elif 're' in rules and rules['re']:
             if not re.search('^' + rules['re'] + '$', value):
                 raise ValidationException(
-                    "{0} value {1} does not validate.".format(param, value))
+                    "%s value %s does not validate."% (param, value))
 
     def _get_validation(self, method, param):
         """Return the correct validations dictionary for this parameter.
@@ -529,7 +532,6 @@ class Resource(object):
         self.response.content_md5 = hashlib.md5(self.response.body).hexdigest()
 
 
-@mount('/_internal/help')
 class Help(Resource):
     """Provides documentation for all resources of the current application.
 
@@ -537,6 +539,7 @@ class Help(Resource):
     .. todo:: Use first sentence of docstring for summary, add bigger version
               at the bottom.
     """
+    _path = '/_internal/help'
     EXTENSION_MAP = [('.html', 'text/html')] + Resource.EXTENSION_MAP
     XML_ROOT_TAG = 'help'
 
@@ -1041,9 +1044,9 @@ class Help(Resource):
         retval.append('<table id="overview">')
         retval.append('<tr><th>Resource</th><th>Path</th><th>Description</th></tr>')
         for resource in raw:
-            retval.append('<tr><td><a href="#{0}">{0}</a></td><td>{1}</td><td>{2}</td></tr>'.format(
-                xml_escape(resource['name']), xml_escape(resource['path']),
-                xml_escape(resource['desc'])))
+            retval.append('<tr><td><a href="#%s">%s</a></td><td>%s</td><td>%s</td></tr>' % (
+                xml_escape(resource['name']), xml_escape(resource['name']),
+                xml_escape(resource['path']), xml_escape(resource['desc'])))
         retval.append('</table>')
 
     def to_text_html_resources(self, retval, raw):
@@ -1058,17 +1061,15 @@ class Help(Resource):
         """
         for resource in raw:
             retval.append('<div class="resource_details">')
-            retval.append('<h2 id="{0}">{0}</h2>'.format(
-                xml_escape(resource['name'])))
+            retval.append('<h2 id="%s">%s</h2>' % (
+                xml_escape(resource['name']), xml_escape(resource['name'])))
             if resource['desc']:
-                retval.append('<p class="desc">{0}</p>'.format(xml_escape(resource['desc'])))
+                retval.append('<p class="desc">%s</p>' % xml_escape(resource['desc']))
             retval.append('<table class="config">')
-            retval.append('<tr><th>Path</th><td>{0}</td>'.format(xml_escape(
-                resource['path'])))
+            retval.append('<tr><th>Path</th><td>%s</td>' % xml_escape(resource['path']))
             representations = [value + ' (.' + key + ')' for key, value
                 in resource['properties']['EXTENSION_MAP'].iteritems()]
-            retval.append('<tr><th>Representations</th><td>{0}</td>'.format(
-                xml_escape(', '.join(representations))))
+            retval.append('<tr><th>Representations</th><td>%s</td>' % xml_escape(', '.join(representations)))
             retval.append('</table>')
             self.to_text_html_methods(retval, resource)
             retval.append('</div>')
@@ -1083,12 +1084,13 @@ class Help(Resource):
         :type resource: Dictionary
         """
         for method_name, method in resource['methods'].iteritems():
-            retval.append('<h3 id="{0}_{1}">{1}</h3>'.format(
-                xml_escape(resource['name']), xml_escape(method_name)))
-            retval.append('<div class="method_details" id="{0}_{1}_container">'.format(
+            retval.append('<h3 id="%s_%s">%s</h3>' % (
+                xml_escape(resource['name']), xml_escape(method_name),
+                xml_escape(method_name)))
+            retval.append('<div class="method_details" id="%s_%s_container">' % (
                 xml_escape(resource['name']), xml_escape(method_name)))
             if method['desc']:
-                retval.append('<p class="desc">{0}</p>'.format(xml_escape(method['desc'])))
+                retval.append('<p class="desc">%s</p>' % xml_escape(method['desc']))
             if method['parameters']:
                 retval.append('<table class="parameters">')
                 retval.append('<tr><th>Name</th><th>Mandatory</th><th>Description</th><th>Validation</th>')
@@ -1103,12 +1105,12 @@ class Help(Resource):
                     if param['validate_re']:
                         validation = 'Regular expression: <tt>' + \
                             xml_escape(param['validate_re']) + '</tt>'
-                    retval.append('<tr><td>{0}</td><td>{1}</td><td>{2}</td>'
-                        '<td>{3}</td>'.format(xml_escape(param_name),
+                    retval.append('<tr><td>%s</td><td>%s</td><td>%s</td>'
+                        '<td>%s</td>' % (xml_escape(param_name),
                         xml_escape(mandatory), xml_escape(description), validation))
                 retval.append('</table>')
             retval.append('</div>')
-            retval.append('<script>add_resource_method({0},{1},{2},{3});</script>'.format(
+            retval.append('<script>add_resource_method(%s,%s,%s,%s);</script>' % (
                 xml_escape(json.dumps(resource['name']+'_'+method_name+'_container')),
                 xml_escape(json.dumps(resource)),
                 xml_escape(json.dumps(method_name)),

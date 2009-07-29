@@ -2,6 +2,9 @@ Summary of the important changes per WsgiService release. To get the full
 history use the commit log.
 
 
+0.2.2: July 29, 2009
+    - Resource: Fix XML output for unicode strings.
+
 0.2.1: July 15, 2009
     - Routing: Use extensions defined by resource in EXTENSION_MAP dictionary
       instead of the hardcoded list of '.xml' and '.json'.
@@ -19,7 +22,6 @@ history use the commit log.
       validation rules as mandatory.
     - Documentation: Add a lot of additional documentation. Document the
       current state of HTTP implementation.
-
 
 0.2: June 29, 2009
     - Initial packaged release of WsgiService.

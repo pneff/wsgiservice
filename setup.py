@@ -10,7 +10,7 @@ if sys.version_info < (2, 6):
 
 setup(
     name='WsgiService',
-    version='0.2.1',
+    version='0.2.2',
     description="A lean WSGI framework for easy creation of REST services",
     author="Patrice Neff",
     url='http://github.com/pneff/wsgiservice/tree/master',

@@ -478,6 +478,8 @@ class Resource(object):
                 retval.append('</child>')
         elif isinstance(value, bool):
             retval.append(xml_escape(str(value).lower()))
+        elif isinstance(value, unicode):
+            retval.append(xml_escape(value.encode('utf-8')))
         else:
             retval.append(xml_escape(str(value)))
         return "".join(retval)

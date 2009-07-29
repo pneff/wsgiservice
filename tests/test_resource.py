@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import webob
 import wsgiservice
@@ -55,6 +56,18 @@ def test_serialisation_bool():
     s = u.to_text_xml(True)
     print s
     assert s == '<response>true</response>'
+
+
+def test_serialisation_unicode():
+    """Unicode strings are converted to UTF-8."""
+
+    class User(wsgiservice.Resource):
+        pass
+
+    u = User(None, None, None)
+    s = u.to_text_xml({'test': u'gfröhrli'})
+    print s
+    assert s == '<response><test>gfröhrli</test></response>'
 
 
 def test_default_value():

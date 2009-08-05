@@ -11,16 +11,24 @@ Next you create a subclass of :class:`wsgiservice.Resource` which will handle th
 
     @mount('/{id}')
     class Document(Resource):
+        NOT_FOUND = (KeyError,)
+
         def GET(self, id):
             """Return the document indicated by the ID."""
             return data[id]
 
-        def PUT(self, request, id):
+        def PUT(self, id):
             """Overwrite or create the document indicated by the ID."""
+            is_new = id not in data
             data.setdefault(id, {'id': id})
-            for key in request.POST:
-                data[id][key] = request.POST[key]
-            return {'id': id, 'saved': True}
+            for key in self.request.POST:
+                data[id][key] = self.request.POST[key]
+            retval = {'id': id, 'saved': True}
+            if is_new:
+                self.response.body_raw = retval
+                raise_201(self, id)
+            else:
+                return retval
 
         def DELETE(self, id):
             """Delete the document indicated by the ID."""
@@ -42,12 +50,11 @@ Let's also create a ``Documents`` resource which can be used to create a new doc
 
     @mount('/')
     class Documents(Resource):
-        def POST(self, request):
+        def POST(self):
             """Create a new document, assigning a unique ID. Parameters are
-            passed in as key/value pairs in the POST data."""
             id = str(uuid.uuid4())
-            res = Document()
-            return res.PUT(request, id)
+            res = self.get_resource(Document)
+            return res.PUT(id)
 
 You see how easy it is to use an existing request to do the work of saving.
 

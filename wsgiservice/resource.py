@@ -6,6 +6,7 @@ import re
 import webob
 from xml.sax.saxutils import escape as xml_escape
 from wsgiservice.status import *
+from wsgiservice import xmlserializer
 from wsgiservice.decorators import mount
 from wsgiservice.exceptions import ValidationException, ResponseException
 
@@ -438,51 +439,13 @@ class Resource(object):
         The default root tag is 'response', but that can be overwritting by
         changing the :attr:`XML_ROOT_TAG` instance variable.
 
+        Uses :func:`wsgiservice.xmlserializer.dumps()` for the actual work.
+
         :param raw: The return value of the resource method.
         :type raw: Any valid Python value
         :rtype: string
         """
-        xml = self._get_xml_value(raw)
-        if self.XML_ROOT_TAG is None:
-            return xml
-        else:
-            root = self.XML_ROOT_TAG
-            return '<' + root + '>' + xml + '</' + root + '>'
-
-    def _get_xml_value(self, value):
-        """Convert an individual value to an XML string. Calls itself
-        recursively for dictionaries and lists.
-
-        Uses some heuristics to convert the data to XML:
-            - In dictionaries, the keys become the tag name.
-            - In lists the tag name is 'child' with an order-attribute giving
-              the list index.
-            - All other values are included as is.
-
-        All values are escaped to fit into the XML document.
-
-        :param value: The value to convert to XML.
-        :type value: Any valid Python value
-        :rtype: string
-        """
-        retval = []
-        if isinstance(value, dict):
-            for key, value in value.iteritems():
-                retval.append('<' + xml_escape(str(key)) + '>')
-                retval.append(self._get_xml_value(value))
-                retval.append('</' + xml_escape(str(key)) + '>')
-        elif isinstance(value, list):
-            for key, value in enumerate(value):
-                retval.append('<child order="' + xml_escape(str(key)) + '">')
-                retval.append(self._get_xml_value(value))
-                retval.append('</child>')
-        elif isinstance(value, bool):
-            retval.append(xml_escape(str(value).lower()))
-        elif isinstance(value, unicode):
-            retval.append(xml_escape(value.encode('utf-8')))
-        else:
-            retval.append(xml_escape(str(value)))
-        return "".join(retval)
+        return xmlserializer.dumps(raw, self.XML_ROOT_TAG)
 
     def handle_exception(self, e, status=500):
         """Handle the given exception. Log, sets the response code and

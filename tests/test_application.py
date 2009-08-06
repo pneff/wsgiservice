@@ -296,6 +296,7 @@ def test_etag_if_none_match_get_true():
     assert res.body == ''
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
+    assert 'Content-Type' not in res.headers
 
 
 def test_etag_if_none_match_head_true():

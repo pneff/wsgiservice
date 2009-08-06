@@ -520,7 +520,10 @@ class Resource(object):
         instance attribute which was set by :func:`get_content_type`. Also
         declares a UTF-8 charset.
         """
-        self.response.headers['Content-Type'] = self.type + '; charset=UTF-8'
+        if self.response.body:
+            self.response.headers['Content-Type'] = self.type + '; charset=UTF-8'
+        elif 'Content-Type' in self.response.headers:
+            del self.response.headers['Content-Type']
 
     def set_response_content_md5(self):
         """Set the Content-MD5 response header. Calculated from the the

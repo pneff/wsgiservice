@@ -5,5 +5,7 @@
 others/
 docs/_build/
 .env/
+.env-2.5/
+.noseids
 build/
 dist/

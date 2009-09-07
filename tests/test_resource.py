@@ -274,3 +274,4 @@ def test_default_mimetype():
     res = usr()
     print res
     assert res.headers['Content-Type'] == 'text/plain; charset=UTF-8'
+    

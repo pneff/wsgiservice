@@ -112,8 +112,16 @@ def get_app(defs, add_help=True):
     :type add_help: boolean
     :rtype: :class:`Application`
     """
-    resources = [d for d in defs.values() if inspect.isclass(d) and
-        issubclass(d, wsgiservice.Resource) and hasattr(d, '_path')]
+    def is_resource(d):
+        try:
+            if issubclass(d, wsgiservice.Resource) and hasattr(d, '_path'):
+                return True
+        except TypeError:
+            pass # d wasn't a class
+            
+        return False
+    
+    resources = [d for d in defs.values() if is_resource(d)]
     if add_help:
         resources.append(wsgiservice.resource.Help)
     return Application(resources)

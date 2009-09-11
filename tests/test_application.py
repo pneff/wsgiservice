@@ -568,3 +568,9 @@ class Resource6(wsgiservice.Resource):
 
     def GET(self, id):
         return self.items[id]
+
+class NotAResource():
+    def __getattr__(self, name):
+        return name
+
+not_a_class = NotAResource()

@@ -1079,3 +1079,27 @@ class Help(Resource):
                 xml_escape(json.dumps(resource)),
                 xml_escape(json.dumps(method_name)),
                 xml_escape(json.dumps(method))))
+
+
+class NotFoundResource(Resource):
+    EXTENSION_MAP = [('.html', 'text/html')] + Resource.EXTENSION_MAP
+
+    def GET(self):
+        self.response.status = 404
+        return {'error': 'The requested resource does not exist.'}
+
+    def get_method(self, method=None):
+        return 'GET'
+
+    def handle_ignored_resources(self):
+        return
+
+    def to_text_html(self, raw):
+        return "".join([
+            '<html>',
+            '<head><title>404 Not Found</title></head>',
+            '<body>',
+            '<center><h1>404 Not Found</h1></center>',
+            '<center>The requested resource does not exist.</center>',
+            '</body></html>'
+        ])

@@ -28,6 +28,10 @@ class Application(object):
     #: the client and is non-empty. (Default: ['From'])
     LOG_HEADERS = ['From']
 
+    #: :class:`wsgiservice.resource.Resource` class. Used as the default
+    #: resource when the routing does not return any match.
+    NOT_FOUND_RESOURCE = wsgiservice.resource.NotFoundResource
+
     #: Resource classes served by this application. Set by the constructor.
     _resources = None
 
@@ -84,10 +88,10 @@ class Application(object):
         response = webob.Response(request=request)
         path = request.path_info
         parsed = self._urlmap(path)
-        if not parsed:
-            response.status = 404
-            return response
-        path_params, resource = parsed
+        if parsed:
+            path_params, resource = parsed
+        else:
+            path_params, resource = {}, self.NOT_FOUND_RESOURCE
         instance = resource(request=request, response=response,
             path_params=path_params, application=self)
         response = instance()

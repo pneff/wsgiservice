@@ -28,11 +28,13 @@ def test_getapp():
 def test_app_handle_404():
     """Application returns a 404 status code if no resource is found."""
     app = wsgiservice.get_app(globals())
-    req = Request.blank('/foo')
+    req = Request.blank('/foo', {'HTTP_ACCEPT': 'text/xml'})
     res = app._handle_request(req)
     print res
     assert res.status == '404 Not Found'
-    assert res.body == ''
+    assert res.body == '<response><error>' \
+        'The requested resource does not exist.</error></response>'
+    assert res.headers['Content-Type'] == 'text/xml; charset=UTF-8'
 
 
 def test_app_handle_method_not_allowed():

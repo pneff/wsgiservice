@@ -250,4 +250,19 @@ def test_default_mimetype():
     res = usr()
     print res
     assert res.headers['Content-Type'] == 'text/plain; charset=UTF-8'
-    
+
+
+def test_raise_404():
+    """Use NotFoundResource when a 404 response is raised."""
+
+    class Dummy(wsgiservice.Resource):
+        _path = '/test'
+        def GET(self):
+            wsgiservice.raise_404(self)
+
+    req = webob.Request.blank('/test')
+    res = webob.Response()
+    usr = Dummy(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.headers['Content-Type'] == 'text/xml; charset=UTF-8'

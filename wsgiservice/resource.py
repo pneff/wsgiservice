@@ -115,6 +115,9 @@ class Resource(object):
         except ResponseException, e:
             # a response was raised, catch it
             self.response = e.response
+            r = e.response
+            if r.status_int == 404 and not r.body and not hasattr(r, 'body_raw'):
+                self.handle_exception_404(e)
         except self.NOT_FOUND, e:
             self.handle_exception_404(e)
         except ValidationException, e:

@@ -62,6 +62,10 @@ class Resource(object):
     #: Reference to the application. Set by the constructor.
     application = None
 
+    #: Charset to output in the Content-Type headers. Set to None to avoid
+    #: sending this.
+    charset = 'UTF-8'
+
     def __init__(self, request, response, path_params, application=None):
         """Constructor. Order of the parameters is not guarantteed, always
         used named parameters.
@@ -487,7 +491,10 @@ class Resource(object):
         declares a UTF-8 charset.
         """
         if self.response.body:
-            self.response.headers['Content-Type'] = self.type + '; charset=UTF-8'
+            ct = self.type
+            if self.charset:
+                ct += '; charset=' + self.charset
+            self.response.headers['Content-Type'] = ct
         elif 'Content-Type' in self.response.headers:
             del self.response.headers['Content-Type']
 

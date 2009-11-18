@@ -60,3 +60,11 @@ Every resource to be served with WsgiService should inherit from the :class:`wsg
 .. automodule:: wsgiservice.routing
    :members:
    :exclude-members: __weakref__
+
+
+:mod:`xmlserializer`
+--------------
+
+.. automodule:: wsgiservice.xmlserializer
+   :members:
+   :exclude-members: __weakref__

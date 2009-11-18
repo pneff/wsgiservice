@@ -6,8 +6,8 @@ returned as XML.
 from xml.sax.saxutils import escape as xml_escape
 
 
-def dumps(obj, root_tag, attrib_config={}):
-    """Serialize :arg:`obj` to an XML :class:`str`.
+def dumps(obj, root_tag, attrib_config=None):
+    """Serialize a Python object to an XML string.
 
     :param obj: Python object to serialize, typically a dictionary
     :type obj: Any valid Python value
@@ -20,7 +20,8 @@ def dumps(obj, root_tag, attrib_config={}):
                           be inlined and the value is a tuple of all keys
                           which are to be inlined.
     :type attrib_config: dict
-    :rtype string
+
+    :rtype: :class:`str`
     """
     xml = _get_xml_value(obj, attrib_config)
     if root_tag is None:

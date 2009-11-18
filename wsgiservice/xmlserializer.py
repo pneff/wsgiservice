@@ -19,7 +19,8 @@ def dumps(obj, root_tag, attrib_config=None):
                           be inlined as attributes to their parent element.
                           The key is the tag name for which attributes are to
                           be inlined and the value is a tuple of all keys
-                          which are to be inlined.
+                          which are to be inlined. The tuple can consist of
+                          the value '*' which will inline all the children.
     :type attrib_config: dict
 
     :rtype: :class:`str`
@@ -91,7 +92,7 @@ def _get_xml_tag(tag_name, content, attrib_config, attributes={}):
         # Get attributes from the list
         content = dict(content) # Copy
         for key in content.keys():
-            if key in this_attrib_config:
+            if '*' in this_attrib_config or key in this_attrib_config:
                 attributes[key] = content[key]
                 del content[key]
     retval.append('<' + xml_escape(tag_name))

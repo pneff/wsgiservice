@@ -54,3 +54,10 @@ def test_attrib_escape_quotes():
     s = dumps({'link': {'href': 'a"il\'ia'}}, None, {'link': ('href')})
     print s
     assert s == '<link href="a&quot;il\'ia"/>'
+
+
+def test_attrib_wildcard():
+    """The * selector escapes all attributes of an element."""
+    s = dumps({'link': {'href': 'testing'}}, None, {'link': ('*')})
+    print s
+    assert s == '<link href="testing"/>'

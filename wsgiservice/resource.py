@@ -24,6 +24,10 @@ class Resource(object):
     #: (Default: 'response')
     XML_ROOT_TAG = 'response'
 
+    #: XML attribute configuration for XML serializer. Passed as
+    #: :param:`attrib_config` to :func:`wsgiservice.xmlserializer.dumps()`.
+    XML_ATTRIBUTES = None
+
     #: List of the known HTTP methods. Used by :func:`get_method` to handle
     #: methods that are not implemented. (Default: All methods defined by the
     #: HTTP 1.1 standard :rfc:`2616`)
@@ -452,7 +456,7 @@ class Resource(object):
         :type raw: Any valid Python value
         :rtype: string
         """
-        return xmlserializer.dumps(raw, self.XML_ROOT_TAG)
+        return xmlserializer.dumps(raw, self.XML_ROOT_TAG, self.XML_ATTRIBUTES)
 
     def handle_exception(self, e, status=500):
         """Handle the given exception. Log, sets the response code and

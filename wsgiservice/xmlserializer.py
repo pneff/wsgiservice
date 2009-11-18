@@ -23,6 +23,8 @@ def dumps(obj, root_tag, attrib_config=None):
 
     :rtype: :class:`str`
     """
+    if not attrib_config:
+        attrib_config = {}
     xml = _get_xml_value(obj, attrib_config)
     if root_tag is None:
         return xml

@@ -4,6 +4,7 @@ returned as XML.
 """
 
 from xml.sax.saxutils import escape as xml_escape
+from xml.sax.saxutils import quoteattr
 
 
 def dumps(obj, root_tag, attrib_config=None):
@@ -95,8 +96,8 @@ def _get_xml_tag(tag_name, content, attrib_config, attributes={}):
                 del content[key]
     retval.append('<' + xml_escape(tag_name))
     for attrib, value in attributes.iteritems():
-        retval.append(' ' + xml_escape(str(attrib)) + '="' +
-            xml_escape(str(value)) + '"')
+        retval.append(' ' + xml_escape(str(attrib)) + '=' +
+            quoteattr(str(value)))
     if content:
         retval.append('>')
         retval.append(_get_xml_value(content, attrib_config))

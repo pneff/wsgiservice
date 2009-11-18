@@ -40,3 +40,17 @@ def test_attrib_config_nochildren():
         {'link': ('href', 'item')})
     print s
     assert s == '<link item="Myitem" href="http://www"/>'
+
+
+def test_attrib_escape():
+    """All special characters are quoted."""
+    s = dumps({'link': {'href': 'a"fü<hl>e&r'}}, None, {'link': ('href')})
+    print s
+    assert s == '<link href=\'a"fü&lt;hl&gt;e&amp;r\'/>'
+
+
+def test_attrib_escape_quotes():
+    """If both quote characters are used, then escape."""
+    s = dumps({'link': {'href': 'a"il\'ia'}}, None, {'link': ('href')})
+    print s
+    assert s == '<link href="a&quot;il\'ia"/>'

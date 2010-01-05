@@ -2,8 +2,18 @@ Summary of the important changes per WsgiService release. To get the full
 history use the commit log.
 
 
+0.2.3: January 5, 2010
+    - Remove Content-Type header when there is no content in the response.
+    - xmlserializer: Move XML serialisation into a separate module.
+    - Output an error message in the body of 404 responses.
+    - Allow specifying of the encoding to be sent with the Content Type
+      reponse header.
+    - Make compatible with WebOb 0.9.7
+
+
 0.2.2: July 29, 2009
     - Resource: Fix XML output for unicode strings.
+
 
 0.2.1: July 15, 2009
     - Routing: Use extensions defined by resource in EXTENSION_MAP dictionary
@@ -22,6 +32,7 @@ history use the commit log.
       validation rules as mandatory.
     - Documentation: Add a lot of additional documentation. Document the
       current state of HTTP implementation.
+
 
 0.2: June 29, 2009
     - Initial packaged release of WsgiService.

@@ -8,7 +8,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'decorator',
-        'webob',
+        'webob >= 0.9.7',
     ],
     tests_require=[
         'nose',

@@ -309,7 +309,7 @@ class Resource(object):
                     break
             if extension:
                 etag += '_' + extension
-            self.response.etag = '"' + etag + '"'
+            self.response.etag = etag
 
     def get_last_modified(self):
         """Return a :class:`datetime.datetime` object of the when the resource

@@ -67,7 +67,7 @@ def test_app_handle_response_201_abs():
     print res
     assert res.status == '201 Created'
     assert res.body == ''
-    assert res.location == 'http://localhost/res2/test'
+    assert res.location == '/res2/test'
 
 
 def test_app_handle_response_201_rel():
@@ -78,7 +78,7 @@ def test_app_handle_response_201_rel():
     print res
     assert res.status == '201 Created'
     assert res.body == ''
-    assert res.location == 'http://localhost/res2/foo'
+    assert res.location == '/res2/foo'
 
 
 def test_app_handle_options():

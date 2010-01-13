@@ -389,7 +389,7 @@ class Resource(object):
         rules = self._get_validation(method, param)
         if not rules:
             return
-        if value is None or len(str(value)) == 0:
+        if value is None or (isinstance(value, basestring) and len(value) == 0):
             raise ValidationException(
                 "Value for {0} must not be empty.".format(param))
         elif 're' in rules and rules['re']:

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """This tests only work in Python 2.6 and newer. They are in a separate file
 so that the parse exceptions don't cause any problems with the other tests.
+
+The feature that causes the parse errors are class decorators.
 """
 import sys
 import wsgiservice

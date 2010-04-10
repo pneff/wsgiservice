@@ -67,4 +67,4 @@ Finally you'll need to create the actual WSGI application and serve it::
         print "Running on port 8001"
         make_server('', 8001, app).serve_forever()
 
-This uses the wsgiref simple server which comes with Python. For production you'll probably want to use a different server. But for now you can now run the resulting file and on port 8001 you'll have a simple document server available.
+This uses the wsgiref simple server which comes with Python. For production you'll probably want to use a different server. But for now you can run the resulting file and on port 8001 you'll have a simple document server available.

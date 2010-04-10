@@ -21,7 +21,7 @@ def mount(path):
     return wrap
 
 
-def validate(name, re=None, doc=None):
+def validate(name, re=None, convert=None, doc=None):
     """Decorator. Apply on a :class:`wsgiservice.Resource` or any of it's
     methods to validates a parameter on input. When a parameter does not
     validate, a :class:`wsgiservice.exceptions.ValidationException` exception
@@ -32,6 +32,11 @@ def validate(name, re=None, doc=None):
     :param re: Regular expression to search for in the input parameter. If
                this is not set, just validates if the parameter has been set.
     :type re: regular expression
+    :param convert: Callable to convert the validated parameter value to the
+                    final data type. Ideal candidates for this are the
+                    built-ins int or float functions. If the function raises a
+                    ValueError, this is reported to the client as a 400 error.
+    :type convert: callable
     :param doc: Parameter description for the API documentation.
     :type doc: string
     """
@@ -39,7 +44,7 @@ def validate(name, re=None, doc=None):
     def wrap(cls_or_func):
         if not hasattr(cls_or_func, '_validations'):
             cls_or_func._validations = {}
-        cls_or_func._validations[name] = {'re': re, 'doc': doc}
+        cls_or_func._validations[name] = {'re': re, 'convert': convert, 'doc': doc}
         return cls_or_func
     return wrap
 

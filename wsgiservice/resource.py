@@ -9,6 +9,7 @@ import re
 import webob
 from xml.sax.saxutils import escape as xml_escape
 from wsgiservice.status import *
+from wsgiservice import xmlserializer
 from wsgiservice.decorators import mount
 from wsgiservice.exceptions import ValidationException, ResponseException
 
@@ -64,6 +65,10 @@ class Resource(object):
     #: Reference to the application. Set by the constructor.
     application = None
 
+    #: Charset to output in the Content-Type headers. Set to None to avoid
+    #: sending this.
+    charset = 'UTF-8'
+
     def __init__(self, request, response, path_params, application=None):
         """Constructor. Order of the parameters is not guarantteed, always
         used named parameters.
@@ -117,6 +122,9 @@ class Resource(object):
         except ResponseException, e:
             # a response was raised, catch it
             self.response = e.response
+            r = e.response
+            if r.status_int == 404 and not r.body and not hasattr(r, 'body_raw'):
+                self.handle_exception_404(e)
         except self.NOT_FOUND, e:
             self.handle_exception_404(e)
         except ValidationException, e:
@@ -304,7 +312,7 @@ class Resource(object):
                     break
             if extension:
                 etag += '_' + extension
-            self.response.etag = '"' + etag + '"'
+            self.response.etag = etag
 
     def get_last_modified(self):
         """Return a :class:`datetime.datetime` object of the when the resource
@@ -359,6 +367,7 @@ class Resource(object):
                     value = source[param]
                     break
             self.validate_param(method, param, value)
+            value = self.convert_param(method, param, value)
             params.append(value)
         return method(*params)
 
@@ -384,13 +393,39 @@ class Resource(object):
         rules = self._get_validation(method, param)
         if not rules:
             return
-        if value is None or len(str(value)) == 0:
+        if value is None or (isinstance(value, basestring) and len(value) == 0):
             raise ValidationException(
                 "Value for %s must not be empty." % param)
-        elif 're' in rules and rules['re']:
+        elif rules.get('re'):
             if not re.search('^' + rules['re'] + '$', value):
                 raise ValidationException(
                     "%s value %s does not validate."% (param, value))
+
+    def convert_param(self, method, param, value):
+        """Converts the parameter using the function 'convert' function of the
+        validation rules. Same parameters as the `validate_param` method, so
+        it might have just been added there. But lumping together the two
+        functionalities would make overwriting harder.
+
+        :param method: A function to get the validation information from (done
+                       using :func:`_get_validation`).
+        :type method: Python function
+        :param param: Name of the parameter to validate the value for.
+        :type param: str
+        :param value: Value passed in for the given parameter.
+        :type value: Any valid Python value
+
+        :raises: :class:`webob.exceptions.ValidationException` if the value is
+                 invalid for the given method and parameter.
+        """
+        rules = self._get_validation(method, param)
+        if not rules or not rules.get('convert'):
+            return value
+        try:
+            return rules['convert'](value)
+        except ValueError:
+            raise ValidationException(
+                "{0} value {1} does not validate.".format(param, value))
 
     def _get_validation(self, method, param):
         """Return the correct validations dictionary for this parameter.
@@ -441,51 +476,13 @@ class Resource(object):
         The default root tag is 'response', but that can be overwritting by
         changing the :attr:`XML_ROOT_TAG` instance variable.
 
+        Uses :func:`wsgiservice.xmlserializer.dumps()` for the actual work.
+
         :param raw: The return value of the resource method.
         :type raw: Any valid Python value
         :rtype: string
         """
-        xml = self._get_xml_value(raw)
-        if self.XML_ROOT_TAG is None:
-            return xml
-        else:
-            root = self.XML_ROOT_TAG
-            return '<' + root + '>' + xml + '</' + root + '>'
-
-    def _get_xml_value(self, value):
-        """Convert an individual value to an XML string. Calls itself
-        recursively for dictionaries and lists.
-
-        Uses some heuristics to convert the data to XML:
-            - In dictionaries, the keys become the tag name.
-            - In lists the tag name is 'child' with an order-attribute giving
-              the list index.
-            - All other values are included as is.
-
-        All values are escaped to fit into the XML document.
-
-        :param value: The value to convert to XML.
-        :type value: Any valid Python value
-        :rtype: string
-        """
-        retval = []
-        if isinstance(value, dict):
-            for key, value in value.iteritems():
-                retval.append('<' + xml_escape(str(key)) + '>')
-                retval.append(self._get_xml_value(value))
-                retval.append('</' + xml_escape(str(key)) + '>')
-        elif isinstance(value, list):
-            for key, value in enumerate(value):
-                retval.append('<child order="' + xml_escape(str(key)) + '">')
-                retval.append(self._get_xml_value(value))
-                retval.append('</child>')
-        elif isinstance(value, bool):
-            retval.append(xml_escape(str(value).lower()))
-        elif isinstance(value, unicode):
-            retval.append(xml_escape(value.encode('utf-8')))
-        else:
-            retval.append(xml_escape(str(value)))
-        return "".join(retval)
+        return xmlserializer.dumps(raw, self.XML_ROOT_TAG)
 
     def handle_exception(self, e, status=500):
         """Handle the given exception. Log, sets the response code and
@@ -523,7 +520,13 @@ class Resource(object):
         instance attribute which was set by :func:`get_content_type`. Also
         declares a UTF-8 charset.
         """
-        self.response.headers['Content-Type'] = self.type + '; charset=UTF-8'
+        if self.response.body:
+            ct = self.type
+            if self.charset:
+                ct += '; charset=' + self.charset
+            self.response.headers['Content-Type'] = ct
+        elif 'Content-Type' in self.response.headers:
+            del self.response.headers['Content-Type']
 
     def set_response_content_md5(self):
         """Set the Content-MD5 response header. Calculated from the the
@@ -1115,3 +1118,27 @@ class Help(Resource):
                 xml_escape(json.dumps(resource)),
                 xml_escape(json.dumps(method_name)),
                 xml_escape(json.dumps(method))))
+
+
+class NotFoundResource(Resource):
+    EXTENSION_MAP = [('.html', 'text/html')] + Resource.EXTENSION_MAP
+
+    def GET(self):
+        self.response.status = 404
+        return {'error': 'The requested resource does not exist.'}
+
+    def get_method(self, method=None):
+        return 'GET'
+
+    def handle_ignored_resources(self):
+        return
+
+    def to_text_html(self, raw):
+        return "".join([
+            '<html>',
+            '<head><title>404 Not Found</title></head>',
+            '<body>',
+            '<center><h1>404 Not Found</h1></center>',
+            '<center>The requested resource does not exist.</center>',
+            '</body></html>'
+        ])

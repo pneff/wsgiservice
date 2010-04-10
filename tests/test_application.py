@@ -28,11 +28,13 @@ def test_getapp():
 def test_app_handle_404():
     """Application returns a 404 status code if no resource is found."""
     app = wsgiservice.get_app(globals())
-    req = Request.blank('/foo')
+    req = Request.blank('/foo', {'HTTP_ACCEPT': 'text/xml'})
     res = app._handle_request(req)
     print res
     assert res.status == '404 Not Found'
-    assert res.body == ''
+    assert res.body == '<response><error>' \
+        'The requested resource does not exist.</error></response>'
+    assert res.headers['Content-Type'] == 'text/xml; charset=UTF-8'
 
 
 def test_app_handle_method_not_allowed():
@@ -65,7 +67,7 @@ def test_app_handle_response_201_abs():
     print res
     assert res.status == '201 Created'
     assert res.body == ''
-    assert res.location == 'http://localhost/res2/test'
+    assert res.location == '/res2/test'
 
 
 def test_app_handle_response_201_rel():
@@ -76,7 +78,7 @@ def test_app_handle_response_201_rel():
     print res
     assert res.status == '201 Created'
     assert res.body == ''
-    assert res.location == 'http://localhost/res2/foo'
+    assert res.location == '/res2/foo'
 
 
 def test_app_handle_options():
@@ -296,6 +298,7 @@ def test_etag_if_none_match_get_true():
     assert res.body == ''
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
+    assert 'Content-Type' not in res.headers
 
 
 def test_etag_if_none_match_head_true():
@@ -567,3 +570,9 @@ class Resource6(wsgiservice.Resource):
 
     def GET(self, id):
         return self.items[id]
+
+class NotAResource():
+    def __getattr__(self, name):
+        return name
+
+not_a_class = NotAResource()

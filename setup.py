@@ -3,14 +3,14 @@ import sys
 
 requirements = [
     'decorator',
-    'webob',
+    'webob >= 0.9.7',
 ]
 if sys.version_info < (2, 6):
     requirements += ['simplejson']
 
 setup(
     name='WsgiService',
-    version='0.2.2',
+    version='0.2.4pre1',
     description="A lean WSGI framework for easy creation of REST services",
     author="Patrice Neff",
     url='http://github.com/pneff/wsgiservice/tree/master',

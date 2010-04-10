@@ -9,6 +9,7 @@ import nose
 
 def test_mount():
     """mount decorator adds the path as an attribute _path."""
+
     @wsgiservice.mount('/{id}')
     class Document(wsgiservice.Resource):
         pass
@@ -19,6 +20,7 @@ def test_mount():
 
 def test_validate_resource():
     """validate decorator adds rules to the _validations attribute list."""
+
     @wsgiservice.validate('id', re=r'[-0-9a-zA-Z]{36}',
         doc='Document ID, must be a valid UUID.')
     class User(wsgiservice.Resource):
@@ -27,4 +29,4 @@ def test_validate_resource():
     print User._validations
     assert User.__name__ == 'User'
     assert User._validations['id'] == {'re': r'[-0-9a-zA-Z]{36}',
-        'doc': 'Document ID, must be a valid UUID.'}
+        'convert': None, 'doc': 'Document ID, must be a valid UUID.'}

@@ -425,7 +425,7 @@ class Resource(object):
             return rules['convert'](value)
         except ValueError:
             raise ValidationException(
-                "{0} value {1} does not validate.".format(param, value))
+                "%s value %s does not validate." % (param, value))
 
     def _get_validation(self, method, param):
         """Return the correct validations dictionary for this parameter.

@@ -26,7 +26,7 @@ def test_validate_resource():
     print User._validations
     assert User.__name__ == 'User'
     assert User._validations['id'] == {'re': r'[-0-9a-zA-Z]{36}',
-        'doc': 'Document ID, must be a valid UUID.'}
+        'convert': None, 'doc': 'Document ID, must be a valid UUID.'}
 
 
 def test_validate_method():
@@ -42,8 +42,9 @@ def test_validate_method():
     print User.PUT._validations
     assert User.PUT.__name__ == 'PUT'
     assert User.PUT._validations['password'] == {'re': None,
-        'doc': "User's password"}
-    assert User.PUT._validations['username'] == {'re': '[a-z]+', 'doc': None}
+        'convert': None, 'doc': "User's password"}
+    assert User.PUT._validations['username'] == {'re': '[a-z]+',
+        'convert': None, 'doc': None}
 
 
 def test_default_value():
@@ -123,6 +124,48 @@ def test_default_value_validate():
     obj = json.loads(res.body)
     print obj
     assert obj == {"error": "Value for id must not be empty."}
+
+
+def test_convert_params():
+    """Convert parameters using the function given."""
+
+    class User(wsgiservice.Resource):
+        @wsgiservice.validate('foo', convert=int)
+        @wsgiservice.validate('bar', convert=repr)
+        def GET(self, foo, bar):
+            return {'foo': foo, 'foo_type': str(type(foo)),
+                    'bar': bar, 'bar_type': str(type(bar))}
+
+    req = webob.Request.blank('/?foo=193&bar=testing',
+        headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 200
+    obj = json.loads(res.body)
+    assert obj['foo'] is 193
+    assert obj['foo_type'] == "<type 'int'>"
+    assert obj['bar'] == "'testing'"
+    assert obj['bar_type'] == "<type 'str'>"
+
+
+def test_convert_params_validate():
+    """Use the conversion function to validate as well."""
+
+    class User(wsgiservice.Resource):
+        @wsgiservice.validate('a', convert=int)
+        def GET(self, a):
+            return {'a': a}
+
+    req = webob.Request.blank('/?a=b', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 400
+    obj = json.loads(res.body)
+    assert obj == {"error": "a value b does not validate."}
 
 
 def test_ignore_robotstxt():

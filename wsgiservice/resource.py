@@ -364,6 +364,7 @@ class Resource(object):
                     value = source[param]
                     break
             self.validate_param(method, param, value)
+            value = self.convert_param(method, param, value)
             params.append(value)
         return method(*params)
 
@@ -392,10 +393,36 @@ class Resource(object):
         if value is None or (isinstance(value, basestring) and len(value) == 0):
             raise ValidationException(
                 "Value for {0} must not be empty.".format(param))
-        elif 're' in rules and rules['re']:
+        elif rules.get('re'):
             if not re.search('^' + rules['re'] + '$', value):
                 raise ValidationException(
                     "{0} value {1} does not validate.".format(param, value))
+
+    def convert_param(self, method, param, value):
+        """Converts the parameter using the function 'convert' function of the
+        validation rules. Same parameters as the `validate_param` method, so
+        it might have just been added there. But lumping together the two
+        functionalities would make overwriting harder.
+
+        :param method: A function to get the validation information from (done
+                       using :func:`_get_validation`).
+        :type method: Python function
+        :param param: Name of the parameter to validate the value for.
+        :type param: str
+        :param value: Value passed in for the given parameter.
+        :type value: Any valid Python value
+
+        :raises: :class:`webob.exceptions.ValidationException` if the value is
+                 invalid for the given method and parameter.
+        """
+        rules = self._get_validation(method, param)
+        if not rules or not rules.get('convert'):
+            return value
+        try:
+            return rules['convert'](value)
+        except ValueError:
+            raise ValidationException(
+                "{0} value {1} does not validate.".format(param, value))
 
     def _get_validation(self, method, param):
         """Return the correct validations dictionary for this parameter.

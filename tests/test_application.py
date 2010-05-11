@@ -81,6 +81,17 @@ def test_app_handle_response_201_rel():
     assert res.location == '/res2/foo'
 
 
+def test_app_handle_response_201_ext():
+    """raise_201 ignores extension in the current path."""
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res2.json', {'REQUEST_METHOD': 'PUT'})
+    res = app._handle_request(req)
+    print res
+    assert res.status == '201 Created'
+    assert res.body == ''
+    assert res.location == '/res2/foo'
+
+
 def test_app_handle_options():
     """Resource provides a good default for the OPTIONS method."""
     app = wsgiservice.get_app(globals())

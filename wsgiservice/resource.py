@@ -59,6 +59,11 @@ class Resource(object):
     #: Dictionary with the path parameters. Set by the constructor.
     path_params = None
 
+    #: String with the current path. Same as request.path except the extension
+    #: is removed. So instead of `/movies.json' it is just `/movies'. Set by
+    #: the constructor.
+    request_path = None
+
     #: Reference to the application. Set by the constructor.
     application = None
 
@@ -87,6 +92,13 @@ class Resource(object):
         self.response = response
         self.path_params = path_params
         self.application = application
+        self.request_path = ''
+        if request:
+            self.request_path = request.path
+            if path_params and path_params.get('_extension'):
+                ext = path_params['_extension']
+                if self.request_path.endswith(ext):
+                    self.request_path = self.request_path[0:-len(ext)]
 
     def OPTIONS(self):
         """Default implementation of the OPTIONS verb. Outputs a list of

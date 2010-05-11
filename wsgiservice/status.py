@@ -374,5 +374,5 @@ def _set_location(instance, location):
     """
     location = str(location)
     if not location.startswith('/'):
-        location = urljoin(instance.request.path.rstrip('/') + '/', location)
+        location = urljoin(instance.request_path.rstrip('/') + '/', location)
     instance.response.location = location

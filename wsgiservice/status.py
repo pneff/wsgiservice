@@ -372,6 +372,7 @@ def _set_location(instance, location):
                      response)
     :type instance: :class:`webob.resource.Resource`
     """
+    location = str(location)
     if not location.startswith('/'):
         location = urljoin(instance.request.path.rstrip('/') + '/', location)
     instance.response.location = location

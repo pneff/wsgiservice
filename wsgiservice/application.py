@@ -36,7 +36,7 @@ class Application(object):
     _resources = None
 
     #: :class:`wsgiservice.routing.Router` instance. Set by the constructor.
-    _resources = None
+    _urlmap = None
 
     def __init__(self, resources):
         """Constructor.

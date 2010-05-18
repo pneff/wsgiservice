@@ -4,6 +4,7 @@ setup(
     name='WsgiService',
     version=wsgiservice.__version__,
     description="A lean WSGI framework for easy creation of REST services",
+    long_description=open('README').read(),
     author=", ".join(wsgiservice.__author__),
     url='http://github.com/pneff/wsgiservice/tree/master',
     download_url='http://pypi.python.org/pypi/WsgiService',

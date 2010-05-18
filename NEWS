@@ -2,6 +2,19 @@ Summary of the important changes per WsgiService release. To get the full
 history use the commit log.
 
 
+0.2.4: May 18, 2010
+    - Resource: Make validation more robust for the case when value is a
+      unicode string.
+    - Resource: The decorator `validate` accepts a callable `convert` used to
+      convert the input string values to the data format required by the
+      service.
+    - Status: Convert the Location argument for `raise_201` and others to a
+      string.
+    - Status: Correctly handle generation of the Location header when the
+      current request contains an extension such as .json or .xml.
+    - License has been clarified and is BSD.
+
+
 0.2.3: January 5, 2010
     - Remove Content-Type header when there is no content in the response.
     - xmlserializer: Move XML serialisation into a separate module.

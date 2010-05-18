@@ -51,7 +51,7 @@ Let's also create a ``Documents`` resource which can be used to create a new doc
     @mount('/')
     class Documents(Resource):
         def POST(self):
-            """Create a new document, assigning a unique ID. Parameters are
+            """Create a new document, assigning a unique ID."""
             id = str(uuid.uuid4())
             res = self.get_resource(Document)
             return res.PUT(id)

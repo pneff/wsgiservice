@@ -1,10 +1,12 @@
 from setuptools import setup, find_packages
+import wsgiservice
 setup(
     name='WsgiService',
-    version='0.2.4pre1',
+    version=wsgiservice.__version__,
     description="A lean WSGI framework for easy creation of REST services",
-    author="Patrice Neff",
+    author=", ".join(wsgiservice.__author__),
     url='http://github.com/pneff/wsgiservice/tree/master',
+    download_url='http://pypi.python.org/pypi/WsgiService',
     packages=find_packages(),
     install_requires=[
         'decorator',
@@ -15,8 +17,9 @@ setup(
         'mox',
     ],
     test_suite='nose.collector',
+    license='BSD',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',

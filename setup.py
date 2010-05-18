@@ -17,6 +17,7 @@ setup(
         'nose',
         'mox',
     ],
+    setup_requires=['Sphinx-PyPI-upload'],
     test_suite='nose.collector',
     license='BSD',
     classifiers=[

@@ -50,6 +50,12 @@ class Resource(object):
     #: browsers don't cause too many exceptions.
     IGNORED_PATHS = ('/favicon.ico', '/robots.txt')
 
+    #: Wether the input parameters from GET and POST should be decoded
+    #: according to the encoding specified by the request. This should only be
+    #: changed to False if the input is supposed to be byte values. (Default:
+    #: True)
+    DECODE_PARAMS = True
+
     #: Object representing the current request. Set by the constructor.
     request = None
 
@@ -357,7 +363,14 @@ class Resource(object):
                             call.
         :type method_name: str
         """
-        DATA_SOURCES = [self.path_params, self.request.GET, self.request.POST]
+        # Data is decoded by default using the encoding specified by the
+        # request.
+        if self.DECODE_PARAMS:
+            DATA_SOURCES = [self.path_params, self.request.GET,
+                            self.request.POST]
+        else:
+            DATA_SOURCES = [self.path_params, self.request.str_GET,
+                            self.request.str_POST]
         method = getattr(self, method_name)
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
         if method_params:

@@ -1,11 +1,13 @@
 from setuptools import setup, find_packages
-import wsgiservice
 setup(
     name='WsgiService',
-    version=wsgiservice.__version__,
+    # Version number also needs to be updated in wsgiservice/__init__.py
+    version='0.2.5',
     description="A lean WSGI framework for easy creation of REST services",
     long_description=open('README').read(),
-    author=", ".join(wsgiservice.__author__),
+    author=", ".join([
+        "Patrice Neff <software@patrice.ch>",
+    ]),
     url='http://github.com/pneff/wsgiservice/tree/master',
     download_url='http://pypi.python.org/pypi/WsgiService',
     packages=find_packages(),

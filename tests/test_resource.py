@@ -146,7 +146,7 @@ def test_convert_params():
     obj = json.loads(res.body)
     assert obj['foo'] is 193
     assert obj['foo_type'] == "<type 'int'>"
-    assert obj['bar'] == "'testing'"
+    assert obj['bar'] == "u'testing'"
     assert obj['bar_type'] == "<type 'str'>"
 
 

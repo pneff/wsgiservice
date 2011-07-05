@@ -49,13 +49,16 @@ def validate(name, re=None, convert=None, doc=None):
     return wrap
 
 
-def expires(duration, currtime=time.time):
+def expires(duration, vary=None, currtime=time.time):
     """Decorator. Apply on a :class:`wsgiservice.Resource` method to set the
     max-age cache control parameter to the given duration. Also calculates
     the correct ``Expires`` response header.
 
     :param duration: Age which this resource may have before becoming stale.
     :type duration: :mod:`datetime.timedelta`
+    :param vary: List of headers that should be added to the Vary response
+                 header.
+    :type vary: list of strings
     :param currtime: Function used to find out the current UTC time. This is
                      used for testing and not required in production code.
     :type currtime: Function returning a :mod:`time.struct_time`
@@ -66,7 +69,17 @@ def expires(duration, currtime=time.time):
     @decorator
     def _expires(func, *args, **kwargs):
         "Sets the expirations header to the given duration."
-        args[0].response.cache_control.max_age = duration
-        args[0].response.expires = currtime() + duration
+        res = args[0].response
+
+        res.cache_control.max_age = duration
+        res.expires = currtime() + duration
+
+        if vary:
+            if res.vary is None:
+                res.vary = vary
+            else:
+                # A bit completed because res.vary is usually a tuple.
+                res.vary = list(set(list(res.vary) + list(vary)))
+
         return func(*args, **kwargs)
     return _expires

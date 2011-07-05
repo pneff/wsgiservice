@@ -221,6 +221,17 @@ def test_with_expires():
     assert res._headers['Cache-Control'] == 'max-age=86400'
 
 
+def test_with_expires_vary():
+    """expires decorator can set the Vary header."""
+    app = wsgiservice.get_app(globals())
+    req = Request.blank('/res6/uid')
+    res = app._handle_request(req)
+    print str(res)
+    print res._headers
+    assert res._headers['Cache-Control'] == 'max-age=86400'
+    assert res._headers['Vary'] == 'Authorization, Accept'
+
+
 def test_with_expires_calculations():
     """expires decorator correctly sets the Expires header."""
     app = wsgiservice.get_app(globals())
@@ -541,12 +552,12 @@ class Resource3(AbstractResource):
 class Resource4(wsgiservice.Resource):
     _path = '/res4'
 
-    @wsgiservice.expires(138, lambda: 1240250007)
+    @wsgiservice.expires(138, currtime=lambda: 1240250007)
     def GET(self, id):
         return "Called with id: {0}".format(id)
 
-    @wsgiservice.expires(139, lambda: 1240250007)
-    @wsgiservice.expires(138, lambda: 1240250007)
+    @wsgiservice.expires(139, currtime=lambda: 1240250007)
+    @wsgiservice.expires(138, currtime=lambda: 1240250007)
     def POST(self, id):
         return "POST Called with id: {0}".format(id)
 
@@ -579,6 +590,7 @@ class Resource6(wsgiservice.Resource):
     _path = '/res6/{id}'
     items = {'uid': 'works'}
 
+    @wsgiservice.expires(timedelta(days=1), vary=['Authorization'])
     def GET(self, id):
         return self.items[id]
 

@@ -1,5 +1,4 @@
 import time
-from wsgiref.handlers import format_date_time
 from decorator import decorator
 from datetime import timedelta
 from webob import timedelta_to_seconds

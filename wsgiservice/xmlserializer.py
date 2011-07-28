@@ -2,14 +2,24 @@
 intuitive data from resource methods which are usable as JSON but can also be
 returned as XML.
 """
-
+import re
 from xml.sax.saxutils import escape as xml_escape
+
+# Regular expression matching all the illegal XML characters.
+RE_ILLEGAL_XML = re.compile(
+    u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])|([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
+    (unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
+     unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
+     unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff)))
 
 
 def dumps(obj, root_tag):
     """Serialize :arg:`obj` to an XML :class:`str`.
     """
     xml = _get_xml_value(obj)
+    if xml:
+        # Remove invalid XML
+        xml = RE_ILLEGAL_XML.sub('', xml)
     if root_tag is None:
         return xml
     else:
@@ -51,3 +61,4 @@ def _get_xml_value(value):
     else:
         retval.append(xml_escape(str(value)))
     return "".join(retval)
+

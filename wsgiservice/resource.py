@@ -207,7 +207,7 @@ class Resource(object):
         else:
             self.response.vary.append('Accept')
         types = [mime for ext, mime in self.EXTENSION_MAP]
-        return self.request.accept.first_match(types)
+        return self.request.accept.best_match(types)
 
     def handle_ignored_resources(self):
         """Ignore robots.txt and favicon.ico GET requests based on a list of

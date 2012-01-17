@@ -150,30 +150,28 @@ def test_convert_params():
     assert obj['bar_type'] == "<type 'str'>"
 
 
-def test_no_decode_params():
-    """Optionally don't decode params."""
+def test_latin1_submit():
+    """Don't access request.POST magically if method doesn't expect params.
+
+    This way if a web service wants to handle non-expected data (WebOb only
+    allows UTF-8), it can do so manually inside the method.
+    """
 
     class User(wsgiservice.Resource):
-        DECODE_PARAMS = False
+        def POST(self):
+            return {'body': repr(self.request.body)}
 
-        @wsgiservice.validate('foo', convert=int)
-        @wsgiservice.validate('bar', convert=repr)
-        def GET(self, foo, bar):
-            return {'foo': foo, 'foo_type': str(type(foo)),
-                    'bar': bar, 'bar_type': str(type(bar))}
-
-    req = webob.Request.blank('/?foo=193&bar=testing',
-        headers={'Accept': 'application/json'})
+    req = webob.Request.blank('/test', {'REQUEST_METHOD': 'POST'},
+        headers={'Accept': 'application/json',
+                 'Content-Type': 'application/x-www-form-urlencoded'})
+    req.body = u'Fühler'.encode('latin1')
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
     print res
     assert res.status_int == 200
     obj = json.loads(res.body)
-    assert obj['foo'] is 193
-    assert obj['foo_type'] == "<type 'int'>"
-    assert obj['bar'] == "'testing'"
-    assert obj['bar_type'] == "<type 'str'>"
+    assert obj == {'body': "'F\\xfchler'"}
 
 
 def test_convert_params_validate():

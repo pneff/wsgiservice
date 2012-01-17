@@ -370,28 +370,27 @@ class Resource(object):
                             call.
         :type method_name: str
         """
-        # Data is decoded by default using the encoding specified by the
-        # request.
-        if self.DECODE_PARAMS:
-            DATA_SOURCES = [self.path_params, self.request.GET,
-                            self.request.POST]
-        else:
-            DATA_SOURCES = [self.path_params, self.request.str_GET,
-                            self.request.str_POST]
         method = getattr(self, method_name)
+
+        request_data = []
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
         if method_params:
             method_params.pop(0) # pop the self off
+        if method_params or defaults:
+            # Read the input values, so we can call the method with keyword
+            # arguments from the request
+            request_data = [self.path_params, self.request.GET,
+                            self.request.POST]
         if defaults:
             optional_args = method_params[-len(defaults):]
             # Create a new dictionary with the keys from optional_args and
             # values from defaults.
             optional_args = dict(zip(optional_args, defaults))
-            DATA_SOURCES.append(optional_args)
+            request_data.append(optional_args)
         params = []
         for param in method_params:
             value = None
-            for source in DATA_SOURCES:
+            for source in request_data:
                 if source and param in source:
                     value = source[param]
                     break

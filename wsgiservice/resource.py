@@ -261,7 +261,7 @@ class Resource(object):
                  the MD5 hash does not match the body.
         """
         if 'Content-MD5' in self.request.headers:
-            body_md5 = hashlib.md5(self.request.body_file.read()).hexdigest()
+            body_md5 = hashlib.md5(self.request.body).hexdigest()
             if body_md5 != self.request.headers['Content-MD5']:
                 raise_400(self, msg='Invalid Content-MD5 request header.')
 

@@ -465,7 +465,8 @@ def test_verify_content_md5_valid():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res1/theid', {
         'HTTP_CONTENT_MD5': '89d5739baabbbe65be35cbe61c88e06d',
-        'wsgi.input': StringIO.StringIO('Foobar')})
+    })
+    req.body_file = StringIO.StringIO('Foobar')
     res = app._handle_request(req)
     print res
     assert res.status == '200 OK'

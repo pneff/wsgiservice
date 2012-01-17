@@ -321,6 +321,24 @@ def test_default_mimetype():
     assert res.headers['Content-Type'] == 'text/plain; charset=UTF-8'
 
 
+def test_invalid_accept():
+    """Again use the first item of EXTENSION_MAP as the default if the
+    `Accept` header has an unknown value.
+    """
+    class Dummy(wsgiservice.Resource):
+        _path = '/test'
+
+        def GET(self, id):
+            return {'status': 'success'}
+
+    req = webob.Request.blank('/test', headers={'Accept': 'text/json'})
+    res = webob.Response()
+    usr = Dummy(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.headers['Content-Type'] == 'text/xml; charset=UTF-8'
+
+
 def test_raise_404():
     """Use NotFoundResource when a 404 response is raised."""
 

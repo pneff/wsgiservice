@@ -207,7 +207,14 @@ class Resource(object):
         else:
             self.response.vary.append('Accept')
         types = [mime for ext, mime in self.EXTENSION_MAP]
-        return self.request.accept.best_match(types)
+        ct = self.request.accept.best_match(types)
+        # No best match found. The specification allows us to either return a
+        # 406 or just use another format in this case.
+        # We pick the default format, though that may become a configurable
+        # behavior in the future.
+        if not ct:
+            ct = types[0]
+        return ct
 
     def handle_ignored_resources(self):
         """Ignore robots.txt and favicon.ico GET requests based on a list of

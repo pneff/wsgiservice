@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 setup(
     name='WsgiService',
     # Version number also needs to be updated in wsgiservice/__init__.py
-    version='0.2.7',
+    version='0.3',
     description="A lean WSGI framework for easy creation of REST services",
     long_description=open('README').read(),
     author=", ".join([
@@ -23,7 +23,7 @@ setup(
     test_suite='nose.collector',
     license='BSD',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',

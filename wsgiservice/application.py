@@ -54,10 +54,14 @@ class Application(object):
         :param start_response: Function called when the response is ready to
                be served.
         """
-        request = webob.Request(environ)
-        self._log_request(request)
-        response = self._handle_request(request)
-        return response(environ, start_response)
+        try:
+            request = webob.Request(environ)
+            self._log_request(request)
+            response = self._handle_request(request)
+            return response(environ, start_response)
+        except Exception as e:
+            logger.exception('Uncaught exception in service: %s', e)
+            raise
 
     def _log_request(self, request):
         """Log the most important parts of this request.

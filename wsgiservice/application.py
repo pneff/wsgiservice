@@ -1,5 +1,4 @@
 """Components responsible for building the WSGI application."""
-import inspect
 import logging
 import webob
 import wsgiservice
@@ -121,10 +120,10 @@ def get_app(defs, add_help=True):
             if issubclass(d, wsgiservice.Resource) and hasattr(d, '_path'):
                 return True
         except TypeError:
-            pass # d wasn't a class
-            
+            pass  # d wasn't a class
+
         return False
-    
+
     resources = [d for d in defs.values() if is_resource(d)]
     if add_help:
         resources.append(wsgiservice.resource.Help)

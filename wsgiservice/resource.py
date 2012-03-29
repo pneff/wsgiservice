@@ -1128,8 +1128,10 @@ class Help(Resource):
                 retval.append('<tr><th>Name</th><th>Mandatory</th><th>Description</th><th>Validation</th>')
                 for param_name, param in method['parameters'].iteritems():
                     # filter out any parameters that can't be written as html.
+                    # can contain stuff in other encodings than ascii,
+                    # so convert it to ascii
                     mandatory = '-'
-                    description = param['desc']
+                    description = param['desc'].encode('ascii', 'replace')
                     validation = ''
                     if param['mandatory']:
                         mandatory = 'Yes'
@@ -1143,7 +1145,8 @@ class Help(Resource):
                         mandatory += ' (Path parameter)'
                     if param['validate_re']:
                         validation = 'Regular expression: <tt>' + \
-                            xml_escape(param['validate_re']) + '</tt>'
+                            xml_escape(param['validate_re'].encode('ascii', 'replace')) + \
+                                        '</tt>'
                     retval.append('<tr><td>{0}</td><td>{1}</td><td>{2}</td>'
                         '<td>{3}</td>'.format(xml_escape(param_name),
                         xml_escape(mandatory), xml_escape(description), validation))

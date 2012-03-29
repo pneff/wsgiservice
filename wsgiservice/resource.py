@@ -1127,11 +1127,18 @@ class Help(Resource):
                 retval.append('<table class="parameters">')
                 retval.append('<tr><th>Name</th><th>Mandatory</th><th>Description</th><th>Validation</th>')
                 for param_name, param in method['parameters'].iteritems():
+                    # filter out any parameters that can't be written as html.
                     mandatory = '-'
                     description = param['desc']
                     validation = ''
                     if param['mandatory']:
                         mandatory = 'Yes'
+                        # the 'convert' key is a <type 'function'> that can't
+                        # be written as a string, so convert it to one.
+                        if type(param['mandatory']) is dict and \
+                                'convert' in param['mandatory']:
+                            param['mandatory']['convert'] = \
+                                    str(param['mandatory']['convert'])
                     if param['path_param']:
                         mandatory += ' (Path parameter)'
                     if param['validate_re']:

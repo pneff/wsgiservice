@@ -192,6 +192,60 @@ def test_convert_params_validate():
     assert obj == {"error": "a value b does not validate."}
 
 
+def test_convert_params_list():
+    """Conversion to list is treated in a special way, to support multi-valued parameters."""
+
+    class User(wsgiservice.Resource):
+        @wsgiservice.validate('a', convert=list)
+        def GET(self, a):
+            return {'a': a}
+
+    req = webob.Request.blank('/?a=b&a=c', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 200
+    obj = json.loads(res.body)
+    assert obj == {"a": ["b", "c"]}
+
+
+def test_convert_params_list_missing():
+    """Conversion to list is treated in a special way, to support multi-valued parameters."""
+
+    class User(wsgiservice.Resource):
+        @wsgiservice.validate('a', convert=list)
+        def GET(self, a):
+            return {'a': a}
+
+    req = webob.Request.blank('/?', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 400
+    obj = json.loads(res.body)
+    assert obj == {"error": "Value for a must not be empty."}
+
+
+def test_convert_params_list_default_empty():
+    """Conversion to list is treated in a special way, to support multi-valued parameters."""
+
+    class User(wsgiservice.Resource):
+        @wsgiservice.validate('a', convert=list)
+        def GET(self, a=[]):
+            return {'a': a}
+
+    req = webob.Request.blank('/?', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    assert res.status_int == 200
+    obj = json.loads(res.body)
+    assert obj == {"a": []}
+
+
 def test_ignore_robotstxt():
     """Ignore the robots.txt resource on root resources."""
 

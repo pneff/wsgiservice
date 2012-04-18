@@ -5,6 +5,7 @@ import logging
 import re
 import webob
 from xml.sax.saxutils import escape as xml_escape
+from webob.multidict import MultiDict
 from wsgiservice.status import *
 from wsgiservice import xmlserializer
 from wsgiservice.decorators import mount
@@ -389,10 +390,15 @@ class Resource(object):
             request_data.append(optional_args)
         params = []
         for param in method_params:
+            rules = self._get_validation(method, param)
+            multiple = rules and rules.get('convert') is list
             value = None
             for source in request_data:
                 if source and param in source:
-                    value = source[param]
+                    if multiple and isinstance(source, MultiDict):
+                        value = source.getall(param)
+                    else:
+                        value = source[param]
                     break
             self.validate_param(method, param, value)
             value = self.convert_param(method, param, value)

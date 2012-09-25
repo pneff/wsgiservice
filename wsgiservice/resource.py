@@ -528,12 +528,12 @@ class Resource(object):
 
     def handle_exception_404(self, e):
         """Handle the given exception. Log, sets the response code to 404 and
-        output the exception message as an error message.
+        output the exception message as an info message.
 
         :param e: Exception which is being handled.
         :type e: :class:`Exception`
         """
-        logger.exception(
+        logger.info(
             "A 404 Not Found exception occured while handling the request.")
         self.response.body_raw = {'error': 'Not Found'}
         self.response.status = 404

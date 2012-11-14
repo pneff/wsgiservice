@@ -6,7 +6,7 @@ from webob import timedelta_to_seconds
 
 def mount(path):
     """Decorator. Apply on a :class:`wsgiservice.Resource` to mount it at the
-    given path. The same can be achived by setting the ``_path`` attribute on
+    given path. The same can be achieved by setting the ``_path`` attribute on
     the class directly.
 
     :param path: A path to mount this resource on. See

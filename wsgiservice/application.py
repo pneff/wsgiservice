@@ -74,12 +74,12 @@ class Application(object):
         for d in self.LOG_HEADERS:
             if d in request.headers and request.headers[d]:
                 msg.append(d + ': ' + repr(request.headers[d]))
-        logger.info("Reqest information: %s", ', '.join(msg))
+        logger.info("Request information: %s", ', '.join(msg))
 
     def _handle_request(self, request):
         """Finds the resource to which a request maps and then calls it.
         Instantiates, fills and returns a :class:`webob.Response` object. If
-        no resource matches the request, a 404 status is set on the responrce
+        no resource matches the request, a 404 status is set on the response
         object.
 
         :param request: Object representing the current request.
@@ -111,7 +111,7 @@ def get_app(defs, add_help=True):
                  of this dictionary is used as application resource. The other
                  values are discarded.
     :type defs: dict
-    :param add_help: Wether to add the Help resource which will expose the
+    :param add_help: Whether to add the Help resource which will expose the
                      documentation of this service at /_internal/help
     :type add_help: boolean
     :rtype: :class:`Application`

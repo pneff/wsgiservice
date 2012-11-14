@@ -77,10 +77,18 @@ class UserEmailView(Resource):
     def POST(self, email, password, request):
         """Checks if the given user/password combination is correct. Returns
         the user hash if successful, returns False otherwise."""
-        if id in users and users['id'].get('password', '') == get_hashed(password):
+        the_user = _existingEmail(email)
+        if the_user and the_user.get('password', '') == get_hashed(password):
             return users
         else:
             return False
+
+    def _existingEmail(self, email):
+        """Check whether given email is already in the users dictionary"""
+        for u in users:
+            if email == users[u].get('email'):
+                return users[u]
+        return False
 
 userapp = get_app(globals())
 

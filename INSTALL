@@ -17,6 +17,9 @@ After checking out, type the following command:
     python setup.py develop
 
 You need setuptools for this to work.
+If the installation directory is a system-owned directory (for instance,
+/usr/lib/python2.7/site-packages), then you need to run the above command
+as root.
 
 
 DOCUMENTATION

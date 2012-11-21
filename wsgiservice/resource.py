@@ -66,7 +66,7 @@ class Resource(object):
     path_params = None
 
     #: String with the current path. Same as request.path except the extension
-    #: is removed. So instead of `/movies.json' it is just `/movies'. Set by
+    #: is removed. So instead of `/movies.json` it is just `/movies`. Set by
     #: the constructor.
     request_path = None
 
@@ -122,7 +122,7 @@ class Resource(object):
               instance's response attribute with the one from the exception.
             - For all exceptions in the :attr:`NOT_FOUND` tuple
               :func:`handle_exception_404` is called.
-            - :class:`webob.exceptions.ValidationException`:
+            - :class:`wsgiservice.exceptions.ValidationException`:
               :func:`handle_exception` is called and the response code is set
               to 400 (Bad Request).
             - For all other exceptions deriving from the :class:`Exception`
@@ -415,8 +415,8 @@ class Resource(object):
         :param value: Value passed in for the given parameter.
         :type value: Any valid Python value
 
-        :raises: :class:`webob.exceptions.ValidationException` if the value is
-                 invalid for the given method and parameter.
+        :raises: :class:`wsgiservice.exceptions.ValidationException` if the
+            value is invalid for the given method and parameter.
         """
         rules = self._get_validation(method, param)
         if not rules:
@@ -443,8 +443,8 @@ class Resource(object):
         :param value: Value passed in for the given parameter.
         :type value: Any valid Python value
 
-        :raises: :class:`webob.exceptions.ValidationException` if the value is
-                 invalid for the given method and parameter.
+        :raises: :class:`wsgiservice.exceptions.ValidationException` if the
+                value is invalid for the given method and parameter.
         """
         rules = self._get_validation(method, param)
         if not rules or not rules.get('convert'):
@@ -533,8 +533,8 @@ class Resource(object):
         :param e: Exception which is being handled.
         :type e: :class:`Exception`
         """
-        logger.exception(
-            "A 404 Not Found exception occured while handling the request.")
+        logger.debug("A 404 Not Found exception occured while handling "
+                     "the request.")
         self.response.body_raw = {'error': 'Not Found'}
         self.response.status = 404
 

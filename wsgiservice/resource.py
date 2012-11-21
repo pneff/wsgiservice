@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class Resource(object):
-    """Base class for all WsgiService resources. A resourse is a unique REST
+    """Base class for all WsgiService resources. A resource is a unique REST
     endpoint which accepts different methods for different actions.
 
     For each HTTP call the corresponding method (equal to the HTTP method)
@@ -50,7 +50,7 @@ class Resource(object):
     #: browsers don't cause too many exceptions.
     IGNORED_PATHS = ('/favicon.ico', '/robots.txt')
 
-    #: Wether the input parameters from GET and POST should be decoded
+    #: Whether the input parameters from GET and POST should be decoded
     #: according to the encoding specified by the request. This should only be
     #: changed to False if the input is supposed to be byte values. (Default:
     #: True)
@@ -78,7 +78,7 @@ class Resource(object):
     charset = 'UTF-8'
 
     def __init__(self, request, response, path_params, application=None):
-        """Constructor. Order of the parameters is not guarantteed, always
+        """Constructor. Order of the parameters is not guaranteed, always
         used named parameters.
 
         :param request: Object representing the current request.
@@ -501,7 +501,7 @@ class Resource(object):
         :func:`_get_xml_value` which applies some heuristics for converting
         data to XML.
 
-        The default root tag is 'response', but that can be overwritting by
+        The default root tag is 'response', but that can be overwritten by
         changing the :attr:`XML_ROOT_TAG` instance variable.
 
         Uses :func:`wsgiservice.xmlserializer.dumps()` for the actual work.
@@ -522,7 +522,7 @@ class Resource(object):
         :type status: int
         """
         logger.exception(
-            "An exception occured while handling the request: %s", e)
+            "An exception occurred while handling the request: %s", e)
         self.response.body_raw = {'error': str(e)}
         self.response.status = status
 
@@ -533,7 +533,7 @@ class Resource(object):
         :param e: Exception which is being handled.
         :type e: :class:`Exception`
         """
-        logger.debug("A 404 Not Found exception occured while handling "
+        logger.debug("A 404 Not Found exception occurred while handling "
                      "the request.")
         self.response.body_raw = {'error': 'Not Found'}
         self.response.status = 404
@@ -695,7 +695,7 @@ class Help(Resource):
         :type raw: Any valid Python object
         :rtype: string
 
-        .. todo:: Treat pragraphs and/or newlines better in output.
+        .. todo:: Treat paragraphs and/or newlines better in output.
         """
         retval = ["""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
                         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">

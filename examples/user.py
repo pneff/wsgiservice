@@ -9,7 +9,8 @@ from datetime import timedelta
 import sys
 import logging
 import paste.urlmap
-from wsgiservice import *
+from wsgiservice import Resource, mount, validate, expires, raise_201, get_app
+
 
 def get_hashed(password):
     SALT = 'some_pwd_salt'
@@ -19,11 +20,12 @@ logging.basicConfig(level=logging.DEBUG, stream=sys.stderr)
 
 users = {}
 
+
 @mount('/{id}')
 @validate('id', re=r'[-0-9a-zA-Z]{36}', doc='User ID, must be a valid UUID.')
 class User(Resource):
     NOT_FOUND = (KeyError,)
-    
+
     @expires(timedelta(days=1))
     def GET(self, id):
         "Return the document indicated by the ID."
@@ -56,6 +58,7 @@ class User(Resource):
         else:
             return Resource.to_text_xml(self, retval)
 
+
 @mount('/')
 class Users(Resource):
     @validate('email', doc="User's email. This is the unique identifier of a user.")
@@ -68,6 +71,7 @@ class Users(Resource):
         self.response.body_raw = res.PUT(id, email, password)
         raise_201(self, id)
 
+
 @mount('/auth/{email}')
 @validate('email', doc="User's email. This is the unique identifier of a user.")
 @validate('password', doc="User's password.")
@@ -77,10 +81,19 @@ class UserEmailView(Resource):
     def POST(self, email, password, request):
         """Checks if the given user/password combination is correct. Returns
         the user hash if successful, returns False otherwise."""
-        if id in users and users['id'].get('password', '') == get_hashed(password):
+        the_user = self.getUser(email)
+        if the_user and the_user.get('password', '') == get_hashed(password):
             return users
         else:
             return False
+
+    def getUser(self, email):
+        """Returns the user with the given email address."""
+        for u in users:
+            if email == users[u].get('email'):
+                return users[u]
+        return None
+
 
 userapp = get_app(globals())
 

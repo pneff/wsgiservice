@@ -247,7 +247,7 @@ class Resource(object):
                   set in the request. (See :rfc:`2616`, section 9.6)
         """
         self.assert_condition_md5()
-        etag = self.clean_etag(self.call_method('get_etag'))
+        self.clean_etag(self.call_method('get_etag'))
         self.response.last_modified = self.call_method('get_last_modified')
         self.assert_condition_etag()
         self.assert_condition_last_modified()
@@ -362,6 +362,7 @@ class Resource(object):
             1. Path parameters from routing
             2. GET parameters
             3. POST parameters
+            4. Extract parameters from request body
 
         All values are validated using the method :func:`validate_param`. The
         return value of the method is returned unaltered.
@@ -390,10 +391,17 @@ class Resource(object):
         params = []
         for param in method_params:
             value = None
+            # look in sources
             for source in request_data:
                 if source and param in source:
                     value = source[param]
                     break
+            # look in request body for JSON (XML not supported)
+            if self.type == 'application/json' and not value:
+                try:
+                    value = json.loads(self.request.body)[param]
+                except Exception:
+                    pass
             self.validate_param(method, param, value)
             value = self.convert_param(method, param, value)
             params.append(value)

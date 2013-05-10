@@ -77,6 +77,9 @@ class Resource(object):
     #: sending this.
     charset = 'UTF-8'
 
+    # Cache for the `data` property
+    _data = None
+
     def __init__(self, request, response, path_params, application=None):
         """Constructor. Order of the parameters is not guaranteed, always
         used named parameters.
@@ -149,6 +152,27 @@ class Resource(object):
         self.convert_response()
         self.set_response_headers()
         return self.response
+
+    @property
+    def data(self):
+        """Returns the request data as a dictionary.
+
+        Merges the path parameters, GET parameters and POST parameters
+        (form-encoded or JSON dictionary). If a key is present in multiple of
+        these, the first one defined is used.
+        """
+        if self._data:
+            return self._data
+
+        retval = {}
+        data = self.get_request_data()
+        for subdata in data:
+            for key, value in subdata.iteritems():
+                if not key in retval:
+                    retval[key] = value
+
+        self._data = retval
+        return retval
 
     def get_resource(self, resource, **kwargs):
         """Returns a new instance of the resource class passed in as resource.
@@ -370,33 +394,19 @@ class Resource(object):
                             call.
         :type method_name: str
         """
+        params = []
         method = getattr(self, method_name)
 
-        request_data = []
         method_params, varargs, varkw, defaults = inspect.getargspec(method)
-        if method_params:
-            method_params.pop(0) # pop the self off
-        if method_params or defaults:
-            # Read the input values, so we can call the method with keyword
-            # arguments from the request
-            request_data = [self.path_params, self.request.GET,
-                            self.request.POST]
-        if defaults:
-            optional_args = method_params[-len(defaults):]
-            # Create a new dictionary with the keys from optional_args and
-            # values from defaults.
-            optional_args = dict(zip(optional_args, defaults))
-            request_data.append(optional_args)
-        params = []
-        for param in method_params:
-            value = None
-            for source in request_data:
-                if source and param in source:
-                    value = source[param]
-                    break
-            self.validate_param(method, param, value)
-            value = self.convert_param(method, param, value)
-            params.append(value)
+        if method_params and len(method_params) > 1:
+            method_params.pop(0)  # pop the self off
+            data = self._merge_defaults(self.data, method_params, defaults)
+            for param in method_params:
+                value = data.get(param)
+                self.validate_param(method, param, value)
+                value = self.convert_param(method, param, value)
+                params.append(value)
+
         return method(*params)
 
     def validate_param(self, method, param, value):
@@ -561,6 +571,47 @@ class Resource(object):
         response body by creating the MD5 hash from it.
         """
         self.response.content_md5 = hashlib.md5(self.response.body).hexdigest()
+
+    def get_request_data(self):
+        """
+        Read the input values.
+
+        Returns a list of dictionaries. These will be used to automatically
+        pass them into the method.
+
+        Additionally a combined dictionary is written to `self.data`.
+
+        In the case of JSON input, that element in this list will be the parsed
+        JSON value. That may not be a dictionary.
+        """
+        request_data = [self.path_params, self.request.GET]
+
+        if self.request.headers.get('Content-Type') == 'application/json' \
+           and self.request.body:
+            try:
+                post = json.loads(self.request.body)
+            except ValueError:
+                raise_400(self, msg='Invalid JSON content data')
+            if isinstance(post, dict):
+                request_data.append(post)
+        else:
+            request_data.append(self.request.POST)
+
+        return request_data
+
+    def _merge_defaults(self, data, method_params, defaults):
+        """Helper method for adding default values to the data dictionary.
+
+        The `defaults` are the default values inspected from the method that
+        will be called. For any values that are not present in the incoming
+        data, the default value is added.
+        """
+        if defaults:
+            optional_args = method_params[-len(defaults):]
+            for key, value in zip(optional_args, defaults):
+                if not key in data:
+                    data[key] = value
+        return data
 
 
 @mount('/_internal/help')

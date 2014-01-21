@@ -522,7 +522,7 @@ class AbstractResource(wsgiservice.Resource):
 
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'
-    _validations = {'id': {'re': '[a-z]{5}'}}
+    _validations = {'id': {'re': '[a-z]{5}', 'mandatory': True}}
 
     def GET(self, id, foo):
         return 'GET was called with id {0}, foo {1}'.format(id, foo)
@@ -530,7 +530,7 @@ class Resource1(wsgiservice.Resource):
     def POST(self, id, foo):
         return 'POST was called with id {0}, foo {1}'.format(id, foo)
 
-    POST._validations = {'foo': {'re': '[0-9]+'}}
+    POST._validations = {'foo': {'re': '[0-9]+', 'mandatory': True}}
 
 
 class Resource2(wsgiservice.Resource):

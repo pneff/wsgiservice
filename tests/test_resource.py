@@ -26,8 +26,12 @@ def test_validate_resource():
 
     print User._validations
     assert User.__name__ == 'User'
-    assert User._validations['id'] == {'re': r'[-0-9a-zA-Z]{36}',
-        'convert': None, 'doc': 'Document ID, must be a valid UUID.'}
+    assert User._validations['id'] == {
+        're': r'[-0-9a-zA-Z]{36}',
+        'convert': None,
+        'doc': 'Document ID, must be a valid UUID.',
+        'mandatory': True,
+    }
 
 
 def test_validate_method():
@@ -43,9 +47,9 @@ def test_validate_method():
     print User.PUT._validations
     assert User.PUT.__name__ == 'PUT'
     assert User.PUT._validations['password'] == {'re': None,
-        'convert': None, 'doc': "User's password"}
+        'convert': None, 'doc': "User's password", 'mandatory': True}
     assert User.PUT._validations['username'] == {'re': '[a-z]+',
-        'convert': None, 'doc': None}
+        'convert': None, 'doc': None, 'mandatory': True}
 
 
 def test_default_value():
@@ -175,6 +179,31 @@ def test_validate_multiple():
     assert obj['errors']['age'] == "Invalid value for age."
     assert obj['errors']['name'] == "Missing value for name."
     assert obj['errors']['email'] == "Invalid value for email."
+
+
+def test_validate_convert_none_default():
+    """Allow validate decorator which only converts, but doesn't validate.
+    """
+    def optionalint(val):
+        if val is not None:
+            return int(val)
+        else:
+            return None
+
+    class User(wsgiservice.Resource):
+
+        @wsgiservice.validate('age', convert=optionalint, mandatory=False)
+        def GET(self, age):
+            return {'age': age}
+
+    req = webob.Request.blank('/', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    obj = json.loads(res.body)
+    print obj
+    assert obj == {'age': None}
 
 
 def test_latin1_submit():

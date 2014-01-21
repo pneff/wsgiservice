@@ -463,7 +463,9 @@ class Resource(object):
         rules = self._get_validation(method, param)
         if not rules:
             return
-        if value is None or (isinstance(value, basestring) and len(value) == 0):
+        if rules.get('mandatory') and (
+                value is None or
+                (isinstance(value, basestring) and len(value) == 0)):
             raise ValidationException("Missing value for {0}.".format(param))
         elif rules.get('re'):
             if not re.search('^' + rules['re'] + '$', value):

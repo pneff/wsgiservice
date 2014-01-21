@@ -5,12 +5,31 @@ logger = logging.getLogger(__name__)
 
 
 class ValidationException(Exception):
-    """Exception thrown when a validation fails. See
-    :func:`wsgiservice.decorators.validate` for it's use.
+    """Exception thrown when a validation fails.
+
+    See :func:`wsgiservice.decorators.validate` for its use.
     """
 
     def __init__(self, *args, **kwargs):
         logger.error("ValidationException: %s", args[0])
+        Exception.__init__(self, *args, **kwargs)
+
+
+class MultiValidationException(ValidationException):
+    """Exception thrown when a validation fails.
+
+    This collects one or more base `ValidationException` and throws them as a
+    consolidated error.
+    """
+
+    def __init__(self, errors, *args, **kwargs):
+        """Constructor.
+
+        :param errors: Dictionary mapping parameter names to their original
+                       :class:`ValidationException`.
+        :type errors: dict
+        """
+        self.errors = errors
         Exception.__init__(self, *args, **kwargs)
 
 

@@ -3,12 +3,14 @@ import inspect
 import json
 import logging
 import re
-import webob
 from xml.sax.saxutils import escape as xml_escape
-from wsgiservice.status import *
+
+import webob
 from wsgiservice import xmlserializer
 from wsgiservice.decorators import mount
-from wsgiservice.exceptions import ValidationException, ResponseException
+from wsgiservice.exceptions import (MultiValidationException, ResponseException,
+                                    ValidationException)
+from wsgiservice.status import *
 
 logger = logging.getLogger(__name__)
 
@@ -126,8 +128,7 @@ class Resource(object):
             - For all exceptions in the :attr:`NOT_FOUND` tuple
               :func:`handle_exception_404` is called.
             - :class:`wsgiservice.exceptions.ValidationException`:
-              :func:`handle_exception` is called and the response code is set
-              to 400 (Bad Request).
+              :func:`handle_exception_400` is called.
             - For all other exceptions deriving from the :class:`Exception`
               base class, the :func:`handle_exception` method is called.
         """
@@ -146,7 +147,7 @@ class Resource(object):
         except self.NOT_FOUND, e:
             self.handle_exception_404(e)
         except ValidationException, e:
-            self.handle_exception(e, status=400)
+            self.handle_exception_400(e)
         except Exception, e:
             self.handle_exception(e)
         self.convert_response()
@@ -401,13 +402,44 @@ class Resource(object):
         if method_params and len(method_params) > 1:
             method_params.pop(0)  # pop the self off
             data = self._merge_defaults(self.data, method_params, defaults)
-            for param in method_params:
-                value = data.get(param)
-                self.validate_param(method, param, value)
-                value = self.convert_param(method, param, value)
-                params.append(value)
+            params = self._get_validated_params(method, method_params, data)
 
         return method(*params)
+
+    def _get_validated_params(self, method, method_params, data):
+        """
+        Returns a list of params to call the method with.
+
+        The parameters are returned in the order as they are expected by the
+        method. All parameters are validated and converted to the requested
+        datatype, based on the configuration from the `@validate` decorator.
+
+        :param method_params: The introspected parameters the method needs.
+        :type method_params: List of parameter names.
+        :param data: All key/value pairs passed in with the request.
+        :type data: dict
+        """
+        errors = {}
+        params = []
+
+        for param in method_params:
+            value = data.get(param)
+            try:
+                self.validate_param(method, param, value)
+                value = self.convert_param(method, param, value)
+            except ValidationException, e:
+                # Collect all errors, so we can raise them as one consolidated
+                # validation exception.
+                errors[param] = e
+            else:
+                params.append(value)
+
+        if not errors:
+            return params
+
+        # Raise consolidated exceptions. The message of the first error is used
+        # as message of the new consolidated exception.
+        raise MultiValidationException(errors, str(errors.values()[0]))
 
     def validate_param(self, method, param, value):
         """Validates the parameter according to the configurations in the
@@ -432,12 +464,10 @@ class Resource(object):
         if not rules:
             return
         if value is None or (isinstance(value, basestring) and len(value) == 0):
-            raise ValidationException(
-                "Value for {0} must not be empty.".format(param))
+            raise ValidationException("Missing value for {0}.".format(param))
         elif rules.get('re'):
             if not re.search('^' + rules['re'] + '$', value):
-                raise ValidationException(
-                    "{0} value {1} does not validate.".format(param, value))
+                raise ValidationException("Invalid value for {0}.".format(param))
 
     def convert_param(self, method, param, value):
         """Converts the parameter using the function 'convert' function of the
@@ -462,8 +492,7 @@ class Resource(object):
         try:
             return rules['convert'](value)
         except ValueError:
-            raise ValidationException(
-                "{0} value {1} does not validate.".format(param, value))
+            raise ValidationException("Invalid value for {0}.".format(param))
 
     def _get_validation(self, method, param):
         """Return the correct validations dictionary for this parameter.
@@ -535,6 +564,27 @@ class Resource(object):
             "An exception occurred while handling the request: %s", e)
         self.response.body_raw = {'error': str(e)}
         self.response.status = status
+
+    def handle_exception_400(self, e):
+        """Handle the given validation exception. Log, sets the response code
+        to 400 and output all errors as a dictionary.
+
+        :param e: Exception which is being handled.
+        :type e: :class:`ValidationException`, usually its subclass
+                 :class:`MultiValidationException`.
+        """
+        if isinstance(e, MultiValidationException):
+            errors = dict([
+                (param, str(exc)) for param, exc in e.errors.iteritems()
+            ])
+            logger.warning("A 400 Bad Request exception occurred while "
+                           " handling the request: %r", errors)
+            self.response.body_raw = {'errors': errors}
+            self.response.status = 400
+        else:
+            # Use normal `handle_exception` as fallback. This point is probably
+            # reached by legacy code only.
+            self.handle_exception(e, status=400)
 
     def handle_exception_404(self, e):
         """Handle the given exception. Log, sets the response code to 404 and

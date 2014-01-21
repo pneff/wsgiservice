@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+
 import webob
 import wsgiservice
 
@@ -123,7 +124,7 @@ def test_default_value_validate():
     assert res.status_int == 400
     obj = json.loads(res.body)
     print obj
-    assert obj == {"error": "Value for id must not be empty."}
+    assert obj == {"errors": {"id": "Missing value for id."}}
 
 
 def test_convert_params():
@@ -148,6 +149,32 @@ def test_convert_params():
     assert obj['foo_type'] == "<type 'int'>"
     assert obj['bar'] == "u'testing'"
     assert obj['bar_type'] == "<type 'str'>"
+
+
+def test_validate_multiple():
+    """Return multiple validation errors in one go."""
+
+    class User(wsgiservice.Resource):
+        @wsgiservice.validate('age', convert=int)
+        @wsgiservice.validate('name')
+        @wsgiservice.validate('email', re='.*@.*')
+        @wsgiservice.validate('username')
+        def GET(self, age, name, email, username):
+            return locals()
+
+    req = webob.Request.blank(
+        '/?age=undead&email=myself&username=user',
+        headers={'Accept': 'application/json'})
+    response = webob.Response()
+    resource = User(request=req, response=response, path_params={})
+    response = resource()
+    print response
+    assert response.status_int == 400
+    obj = json.loads(response.body)
+    assert obj['errors']
+    assert obj['errors']['age'] == "Invalid value for age."
+    assert obj['errors']['name'] == "Missing value for name."
+    assert obj['errors']['email'] == "Invalid value for email."
 
 
 def test_latin1_submit():
@@ -189,7 +216,7 @@ def test_convert_params_validate():
     print res
     assert res.status_int == 400
     obj = json.loads(res.body)
-    assert obj == {"error": "a value b does not validate."}
+    assert obj == {"errors": {"a": "Invalid value for a."}}
 
 
 def test_ignore_robotstxt():

@@ -1,11 +1,12 @@
-import mox
 import StringIO
 import time
 from datetime import timedelta
-from webob import Request
+
+import mox
 import wsgiservice
 import wsgiservice.application
 import wsgiservice.exceptions
+from webob import Request
 
 
 def test_getapp():
@@ -182,7 +183,7 @@ def test_validation_with_re_none_value():
         inst.validate_param(inst.GET, 'id', None)
     except wsgiservice.exceptions.ValidationException, e:
         print e
-        assert str(e) == 'Value for id must not be empty.'
+        assert str(e) == 'Missing value for id.'
     else:
         assert False, "Expected an exception!"
 
@@ -194,7 +195,7 @@ def test_validation_with_re_mismatch():
         inst.validate_param(inst.GET, 'id', 'fo')
     except wsgiservice.exceptions.ValidationException, e:
         print e
-        assert str(e) == 'id value fo does not validate.'
+        assert str(e) == 'Invalid value for id.'
     else:
         assert False, "Expected an exception!"
 
@@ -206,7 +207,7 @@ def test_validation_with_re_mismatch_toolong():
         inst.validate_param(inst.GET, 'id', 'fooobarrr')
     except wsgiservice.exceptions.ValidationException, e:
         print e
-        assert str(e) == 'id value fooobarrr does not validate.'
+        assert str(e) == 'Invalid value for id.'
     else:
         assert False, "Expected an exception!"
 
@@ -521,7 +522,7 @@ class AbstractResource(wsgiservice.Resource):
 
 class Resource1(wsgiservice.Resource):
     _path = '/res1/{id}'
-    _validations = {'id': {'re': '[a-z]{5}'}}
+    _validations = {'id': {'re': '[a-z]{5}', 'mandatory': True}}
 
     def GET(self, id, foo):
         return 'GET was called with id {0}, foo {1}'.format(id, foo)
@@ -529,7 +530,7 @@ class Resource1(wsgiservice.Resource):
     def POST(self, id, foo):
         return 'POST was called with id {0}, foo {1}'.format(id, foo)
 
-    POST._validations = {'foo': {'re': '[0-9]+'}}
+    POST._validations = {'foo': {'re': '[0-9]+', 'mandatory': True}}
 
 
 class Resource2(wsgiservice.Resource):

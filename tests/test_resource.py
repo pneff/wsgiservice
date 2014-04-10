@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+
 import webob
 import wsgiservice
 
@@ -25,8 +26,12 @@ def test_validate_resource():
 
     print User._validations
     assert User.__name__ == 'User'
-    assert User._validations['id'] == {'re': r'[-0-9a-zA-Z]{36}',
-        'convert': None, 'doc': 'Document ID, must be a valid UUID.'}
+    assert User._validations['id'] == {
+        're': r'[-0-9a-zA-Z]{36}',
+        'convert': None,
+        'doc': 'Document ID, must be a valid UUID.',
+        'mandatory': True,
+    }
 
 
 def test_validate_method():
@@ -42,9 +47,9 @@ def test_validate_method():
     print User.PUT._validations
     assert User.PUT.__name__ == 'PUT'
     assert User.PUT._validations['password'] == {'re': None,
-        'convert': None, 'doc': "User's password"}
+        'convert': None, 'doc': "User's password", 'mandatory': True}
     assert User.PUT._validations['username'] == {'re': '[a-z]+',
-        'convert': None, 'doc': None}
+        'convert': None, 'doc': None, 'mandatory': True}
 
 
 def test_default_value():
@@ -123,7 +128,7 @@ def test_default_value_validate():
     assert res.status_int == 400
     obj = json.loads(res.body)
     print obj
-    assert obj == {"error": "Value for id must not be empty."}
+    assert obj == {"errors": {"id": "Missing value for id."}}
 
 
 def test_convert_params():
@@ -148,6 +153,57 @@ def test_convert_params():
     assert obj['foo_type'] == "<type 'int'>"
     assert obj['bar'] == "u'testing'"
     assert obj['bar_type'] == "<type 'str'>"
+
+
+def test_validate_multiple():
+    """Return multiple validation errors in one go."""
+
+    class User(wsgiservice.Resource):
+        @wsgiservice.validate('age', convert=int)
+        @wsgiservice.validate('name')
+        @wsgiservice.validate('email', re='.*@.*')
+        @wsgiservice.validate('username')
+        def GET(self, age, name, email, username):
+            return locals()
+
+    req = webob.Request.blank(
+        '/?age=undead&email=myself&username=user',
+        headers={'Accept': 'application/json'})
+    response = webob.Response()
+    resource = User(request=req, response=response, path_params={})
+    response = resource()
+    print response
+    assert response.status_int == 400
+    obj = json.loads(response.body)
+    assert obj['errors']
+    assert obj['errors']['age'] == "Invalid value for age."
+    assert obj['errors']['name'] == "Missing value for name."
+    assert obj['errors']['email'] == "Invalid value for email."
+
+
+def test_validate_convert_none_default():
+    """Allow validate decorator which only converts, but doesn't validate.
+    """
+    def optionalint(val):
+        if val is not None:
+            return int(val)
+        else:
+            return None
+
+    class User(wsgiservice.Resource):
+
+        @wsgiservice.validate('age', convert=optionalint, mandatory=False)
+        def GET(self, age):
+            return {'age': age}
+
+    req = webob.Request.blank('/', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    obj = json.loads(res.body)
+    print obj
+    assert obj == {'age': None}
 
 
 def test_latin1_submit():
@@ -189,7 +245,7 @@ def test_convert_params_validate():
     print res
     assert res.status_int == 400
     obj = json.loads(res.body)
-    assert obj == {"error": "a value b does not validate."}
+    assert obj == {"errors": {"a": "Invalid value for a."}}
 
 
 def test_ignore_robotstxt():

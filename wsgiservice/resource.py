@@ -80,6 +80,8 @@ class Resource(object):
     # Cache for the `data` property
     _data = None
 
+    DEFAULT_PREFIX = ''
+
     def __init__(self, request, response, path_params, application=None):
         """Constructor. Order of the parameters is not guaranteed, always
         used named parameters.

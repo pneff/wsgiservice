@@ -49,7 +49,7 @@ class Router(object):
         search_vars = re.compile(r'\{(\w+)\}').finditer
         for resource in resources:
             # Compile regular expression for each path
-            path, regexp, prev_pos = resource._path, '^', 0
+            path, regexp, prev_pos = resource._path, '', 0
             for match in search_vars(path):
                 regexp += re.escape(path[prev_pos:match.start()])
                 # .+? - match any character but non-greedy
@@ -59,6 +59,10 @@ class Router(object):
             # Allow an extension to overwrite the mime type
             extensions = "|".join([ext for ext, _ in resource.EXTENSION_MAP])
             regexp += '(?P<_extension>' + extensions + ')?$'
+            if hasattr(resource, '_prefixes'):
+                prefixes = '|'.join([p for p in resource._prefixes if p != resource.DEFAULT_PREFIX])
+                prefix_check = '?' if resource.DEFAULT_PREFIX in resource._prefixes else ''
+                regexp = '^(/(?P<prefix>' + prefixes + '))' + prefix_check + regexp
             routes.append((re.compile(regexp).match, resource))
         return routes
 

@@ -5,7 +5,7 @@ applications.
 __version__ = "0.4.0"
 
 from application import get_app
-from decorators import mount, validate, expires
+from decorators import mount, validate, expires, versions
 import exceptions
 from resource import Resource
 import routing

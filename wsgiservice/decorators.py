@@ -4,6 +4,16 @@ from datetime import timedelta
 from webob import timedelta_to_seconds
 
 
+def versions(versions, default=False):
+    def wrap(cls):
+        prefixes = map(lambda v: 'v' + str(v), versions)
+        if default:
+            prefixes += [cls.DEFAULT_PREFIX,]
+        cls._prefixes = prefixes
+        return cls
+    return wrap
+
+
 def mount(path):
     """Decorator. Apply on a :class:`wsgiservice.Resource` to mount it at the
     given path. The same can be achieved by setting the ``_path`` attribute on

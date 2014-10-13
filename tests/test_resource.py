@@ -184,15 +184,10 @@ def test_validate_multiple():
 def test_validate_convert_none_default():
     """Allow validate decorator which only converts, but doesn't validate.
     """
-    def optionalint(val):
-        if val is not None:
-            return int(val)
-        else:
-            return None
 
     class User(wsgiservice.Resource):
 
-        @wsgiservice.validate('age', convert=optionalint, mandatory=False)
+        @wsgiservice.validate('age', convert=int, mandatory=False)
         def GET(self, age):
             return {'age': age}
 

@@ -489,7 +489,7 @@ class Resource(object):
                 value is invalid for the given method and parameter.
         """
         rules = self._get_validation(method, param)
-        if not rules or not rules.get('convert'):
+        if not rules or not rules.get('convert') or (value is None and not rules['mandatory']):
             return value
         try:
             return rules['convert'](value)

@@ -467,7 +467,7 @@ class Resource(object):
                 value is None or
                 (isinstance(value, basestring) and len(value) == 0)):
             raise ValidationException("Missing value for {0}.".format(param))
-        elif rules.get('re'):
+        elif rules.get('re') and (rules.get('mandatory') or value is not None):
             if not re.search('^' + rules['re'] + '$', value):
                 raise ValidationException("Invalid value for {0}.".format(param))
 

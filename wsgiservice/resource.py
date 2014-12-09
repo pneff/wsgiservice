@@ -404,6 +404,17 @@ class Resource(object):
             data = self._merge_defaults(self.data, method_params, defaults)
             params = self._get_validated_params(method, method_params, data)
 
+        return self._call_method(method, params, method_params)
+
+    def _call_method(self, method, params, method_params):
+        """
+        Override this method to add additional validation.
+
+        :param method: Method to be called.
+        :param params: Validated parameter values for calling the method.
+        :param method_params: The list of parameters in the method's signature.
+        :return: The result of calling the method.
+        """
         return method(*params)
 
     def _get_validated_params(self, method, method_params, data):

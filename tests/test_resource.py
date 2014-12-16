@@ -181,18 +181,33 @@ def test_validate_multiple():
     assert obj['errors']['email'] == "Invalid value for email."
 
 
-def test_validate_convert_none_default():
-    """Allow validate decorator which only converts, but doesn't validate.
+def test_validate_regex_or_none():
+    """Allow validate decorator which checks regex if the value is not none.
     """
-    def optionalint(val):
-        if val is not None:
-            return int(val)
-        else:
-            return None
 
     class User(wsgiservice.Resource):
 
-        @wsgiservice.validate('age', convert=optionalint, mandatory=False)
+        @wsgiservice.validate('age', re='\d+', convert=int, mandatory=False)
+        def GET(self, age):
+            return {'age': age}
+
+    req = webob.Request.blank('/', headers={'Accept': 'application/json'})
+    res = webob.Response()
+    usr = User(request=req, response=res, path_params={})
+    res = usr()
+    print res
+    obj = json.loads(res.body)
+    print obj
+    assert obj == {'age': None}
+
+
+def test_validate_convert_none_default():
+    """Allow validate decorator which only converts, but doesn't validate.
+    """
+
+    class User(wsgiservice.Resource):
+
+        @wsgiservice.validate('age', convert=int, mandatory=False)
         def GET(self, age):
             return {'age': age}
 

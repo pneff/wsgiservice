@@ -649,16 +649,6 @@ class Resource(object):
         """
         request_data = [self.path_params, self.request.GET]
 
-        # Workaround for BEEKEEPER Android Apps
-        # TODO: remove this as soon as Android Apps are updated.
-        wsgi_load_json = self.request.headers.get('Content-Type') == 'application/json' and self.request.body
-        bkpr_try_json = self.method != 'GET' and self.type == 'application/json' and self.request.body and len(self.request.body)
-        if bkpr_try_json and not wsgi_load_json:
-            try:
-                request_data.append(json.loads(self.request.body))
-                return request_data
-            except Exception:
-                pass
         # End of Workaround
 
         if self.request.headers.get('Content-Type') == 'application/json' \

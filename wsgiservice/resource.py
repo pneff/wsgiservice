@@ -649,8 +649,6 @@ class Resource(object):
         """
         request_data = [self.path_params, self.request.GET]
 
-        # End of Workaround
-
         if self.request.headers.get('Content-Type') == 'application/json' \
            and self.request.body:
             try:

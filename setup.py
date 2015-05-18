@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 setup(
     name='WsgiService',
     # Version number also needs to be updated in wsgiservice/__init__.py
-    version='0.3.1.dev2',
+    version='0.4.0.dev2',
     description="A lean WSGI framework for easy creation of REST services",
     long_description=open('README').read(),
     author=", ".join([
@@ -27,6 +27,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
         'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
     ]
 )

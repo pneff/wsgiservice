@@ -39,7 +39,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'WsgiService'
-copyright = u'2009-2012, Patrice Neff'
+copyright = u'2009-2014, Patrice Neff'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

@@ -593,7 +593,8 @@ class Resource(object):
             ])
             logger.warning("A 400 Bad Request exception occurred while "
                            " handling the request: %r", errors)
-            self.response.body_raw = {'errors': errors}
+            first_error = str(e.errors.values()[0])
+            self.response.body_raw = {'errors': errors, 'error': first_error}
             self.response.status = 400
         else:
             # Use normal `handle_exception` as fallback. This point is probably

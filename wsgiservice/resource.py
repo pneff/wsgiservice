@@ -651,8 +651,9 @@ class Resource(object):
         """
         request_data = [self.path_params, self.request.GET]
 
-        if self.request.headers.get('Content-Type') == 'application/json' \
-           and self.request.body:
+        content_type = self.request.headers.get('Content-Type', '')\
+            .split(';')[0].strip()
+        if content_type  ==  'application/json' and self.request.body:
             try:
                 post = json.loads(self.request.body)
             except ValueError:

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for handling of JSON request data."""
 import json
+
 import webob
 import wsgiservice
 
@@ -89,7 +90,8 @@ def test_default_value_validate():
     assert res.status_int == 400
     obj = json.loads(res.body)
     print obj
-    assert obj == {"error": "Value for id must not be empty."}
+    assert obj["errors"] == {"id": "Missing value for id."}
+    assert obj["error"] == "Missing value for id."
 
 
 def test_validate_empty():
@@ -112,7 +114,8 @@ def test_validate_empty():
     assert res.status_int == 400
     obj = json.loads(res.body)
     print obj
-    assert obj == {"error": "Value for id must not be empty."}
+    assert obj["errors"] == {"id": "Missing value for id."}
+    assert obj["error"] == "Missing value for id."
 
 
 def test_convert_params():
@@ -163,7 +166,8 @@ def test_convert_params_validate():
     print res
     assert res.status_int == 400
     obj = json.loads(res.body)
-    assert obj == {"error": "a value b does not validate."}
+    assert obj["errors"] == {"a": "Invalid value for a."}
+    assert obj["error"] == "Invalid value for a."
 
 
 def test_raise_400_invalid_json():

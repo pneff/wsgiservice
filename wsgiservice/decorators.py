@@ -1,6 +1,7 @@
 import time
-from decorator import decorator
 from datetime import timedelta
+
+from decorator import decorator
 from webob import timedelta_to_seconds
 
 
@@ -20,7 +21,7 @@ def mount(path):
     return wrap
 
 
-def validate(name, re=None, convert=None, doc=None):
+def validate(name, re=None, convert=None, doc=None, mandatory=True):
     """Decorator. Apply on a :class:`wsgiservice.Resource` or any of it's
     methods to validates a parameter on input. When a parameter does not
     validate, a :class:`wsgiservice.exceptions.ValidationException` exception
@@ -38,12 +39,20 @@ def validate(name, re=None, convert=None, doc=None):
     :type convert: callable
     :param doc: Parameter description for the API documentation.
     :type doc: string
+    :param mandatory: Whether the parameter is mandatory. By default this is
+        `True`.
+    :type mandatory: bool
     """
 
     def wrap(cls_or_func):
         if not hasattr(cls_or_func, '_validations'):
             cls_or_func._validations = {}
-        cls_or_func._validations[name] = {'re': re, 'convert': convert, 'doc': doc}
+        cls_or_func._validations[name] = {
+            're': re,
+            'convert': convert,
+            'doc': doc,
+            'mandatory': mandatory,
+        }
         return cls_or_func
     return wrap
 

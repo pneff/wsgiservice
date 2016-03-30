@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 setup(
     name='WsgiService',
     # Version number also needs to be updated in wsgiservice/__init__.py
-    version='0.4.0.dev2',
+    version='0.4.3',
     description="A lean WSGI framework for easy creation of REST services",
     long_description=open('README').read(),
     author=", ".join([

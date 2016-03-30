@@ -9,10 +9,7 @@ class ValidationException(Exception):
 
     See :func:`wsgiservice.decorators.validate` for its use.
     """
-
-    def __init__(self, *args, **kwargs):
-        logger.error("ValidationException: %s", args[0])
-        Exception.__init__(self, *args, **kwargs)
+    pass
 
 
 class MultiValidationException(ValidationException):

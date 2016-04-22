@@ -591,8 +591,8 @@ class Resource(object):
             errors = dict([
                 (param, str(exc)) for param, exc in e.errors.iteritems()
             ])
-            logger.warning("A 400 Bad Request exception occurred while "
-                           " handling the request: %r", errors)
+            logger.exception("A 400 Bad Request exception occurred while "
+                             " handling the request: %r", errors)
             first_error = str(e.errors.values()[0])
             self.response.body_raw = {'errors': errors, 'error': first_error}
             self.response.status = 400

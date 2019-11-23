@@ -56,9 +56,10 @@ def _get_xml_value(value):
             retval.append('</child>')
     elif isinstance(value, bool):
         retval.append(xml_escape(str(value).lower()))
-    elif isinstance(value, str):
+    elif isinstance(value, bytes):
         retval.append(xml_escape(value.encode('utf-8')))
+    elif isinstance(value, str):
+        retval.append(xml_escape(value))
     else:
         retval.append(xml_escape(str(value)))
     return "".join(retval)
-

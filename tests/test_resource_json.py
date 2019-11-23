@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for handling of JSON request data."""
 import json
+
 import webob
 import wsgiservice
 
@@ -14,9 +15,10 @@ def test_default_value():
             return {'id': id, 'bar': bar, 'foo': foo}
 
     data = {'foo': 'baz1', 'bar': 'baz2'}
-    req = webob.Request.blank('/', headers={'Accept': 'application/json',
-                                            'Content-Type': 'application/json'},
-                              method='POST', body=json.dumps(data))
+    req = create_blank_request(
+        '/', headers={
+            'Accept': 'application/json', 'Content-Type': 'application/json'},
+        method='POST', body=json.dumps(data))
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
@@ -35,7 +37,7 @@ def test_default_value_overwrite():
             return {'id': id, 'foo': foo}
 
     data = {'id': '8', 'foo': 'bar'}
-    req = webob.Request.blank('/', headers={'Accept': 'application/json',
+    req = create_blank_request('/', headers={'Accept': 'application/json',
                                             'Content-Type': 'application/json'},
                               method='POST', body=json.dumps(data))
     res = webob.Response()
@@ -57,7 +59,7 @@ def test_default_value_validate_novalue():
             return {'id': id, 'foo': foo}
 
     data = {'foo': 'bar'}
-    req = webob.Request.blank('/', headers={'Accept': 'application/json',
+    req = create_blank_request('/', headers={'Accept': 'application/json',
                                             'Content-Type': 'application/json'},
                               method='POST', body=json.dumps(data))
     res = webob.Response()
@@ -79,7 +81,7 @@ def test_default_value_validate():
             return {'id': id, 'foo': foo}
 
     data = {'foo': 'bar', 'id': None}
-    req = webob.Request.blank('/', headers={'Accept': 'application/json',
+    req = create_blank_request('/', headers={'Accept': 'application/json',
                                             'Content-Type': 'application/json'},
                               method='POST', body=json.dumps(data))
     res = webob.Response()
@@ -102,7 +104,7 @@ def test_validate_empty():
             return {'id': id, 'foo': foo}
 
     data = {'foo': 'bar', 'id': ''}
-    req = webob.Request.blank('/', headers={'Accept': 'application/json',
+    req = create_blank_request('/', headers={'Accept': 'application/json',
                                             'Content-Type': 'application/json'},
                               method='POST', body=json.dumps(data))
     res = webob.Response()
@@ -128,7 +130,7 @@ def test_convert_params():
                     'baz': baz, 'baz_type': str(type(baz))}
 
     data = {'foo': '193', 'bar': 'testing', 'baz': 212}
-    req = webob.Request.blank('/', headers={'Accept': 'application/json',
+    req = create_blank_request('/', headers={'Accept': 'application/json',
                                             'Content-Type': 'application/json'},
                               method='POST', body=json.dumps(data))
     res = webob.Response()
@@ -137,12 +139,12 @@ def test_convert_params():
     print(res)
     assert res.status_int == 200
     obj = json.loads(res.body)
-    assert obj['foo'] is 193
-    assert obj['foo_type'] == "<type 'int'>"
-    assert obj['bar'] == "u'testing'"
-    assert obj['bar_type'] == "<type 'str'>"
-    assert obj['baz'] is 212
-    assert obj['baz_type'] == "<type 'int'>"
+    assert obj['foo'] == 193
+    assert obj['foo_type'] == "<class 'int'>"
+    assert obj['bar'] == "'testing'"
+    assert obj['bar_type'] == "<class 'str'>"
+    assert obj['baz'] == 212
+    assert obj['baz_type'] == "<class 'int'>"
 
 
 def test_convert_params_validate():
@@ -154,7 +156,7 @@ def test_convert_params_validate():
             return {'a': a}
 
     data = {'a': 'b'}
-    req = webob.Request.blank('/', headers={'Accept': 'application/json',
+    req = create_blank_request('/', headers={'Accept': 'application/json',
                                             'Content-Type': 'application/json'},
                               method='POST', body=json.dumps(data))
     res = webob.Response()
@@ -173,7 +175,7 @@ def test_raise_400_invalid_json():
         def POST(self):
             return self.data
 
-    req = webob.Request.blank('/', headers={'Accept': 'application/json',
+    req = create_blank_request('/', headers={'Accept': 'application/json',
                                             'Content-Type': 'application/json'},
                               method='POST', body='{"foo":')
     res = webob.Response()
@@ -195,9 +197,9 @@ def test_accept_non_dict():
         def POST(self):
             return self.data
 
-    req = webob.Request.blank('/', headers={'Accept': 'application/json',
+    req = create_blank_request('/', headers={'Accept': 'application/json',
                                             'Content-Type': 'application/json'},
-                              method='POST', body='123')
+                              method='POST', body=b'123')
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
@@ -205,3 +207,13 @@ def test_accept_non_dict():
     assert res.status_int == 200
     obj = json.loads(res.body)
     assert obj == {}
+
+
+def create_blank_request(*args, **kwargs):
+    """Create a blank test request.
+
+    Will convert the body to byte.
+    """
+    if isinstance(kwargs.get('body'), str):
+        kwargs['body'] = kwargs['body'].encode('utf8')
+    return webob.Request.blank(*args, **kwargs)

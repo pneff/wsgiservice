@@ -1,11 +1,12 @@
-import mox
 import io
-import time
 from datetime import timedelta
-from webob import Request
+
+from mox3 import mox
+
 import wsgiservice
 import wsgiservice.application
 import wsgiservice.exceptions
+from webob import Request
 
 
 def test_getapp():
@@ -32,8 +33,8 @@ def test_app_handle_404():
     res = app._handle_request(req)
     print(res)
     assert res.status == '404 Not Found'
-    assert res.body == '<response><error>' \
-        'The requested resource does not exist.</error></response>'
+    assert res.body == b'<response><error>' \
+        b'The requested resource does not exist.</error></response>'
     assert res.headers['Content-Type'] == 'text/xml; charset=UTF-8'
 
 
@@ -44,7 +45,7 @@ def test_app_handle_method_not_allowed():
     res = app._handle_request(req)
     print(res)
     assert res.status == '405 Method Not Allowed'
-    assert res.body == ''
+    assert res.body == b''
     assert res._headers['Allow'] == 'OPTIONS, POST, PUT'
 
 
@@ -55,7 +56,7 @@ def test_app_handle_method_not_known():
     res = app._handle_request(req)
     print(res)
     assert res.status == '501 Not Implemented'
-    assert res.body == ''
+    assert res.body == b''
     assert res._headers['Allow'] == 'OPTIONS, POST, PUT'
 
 
@@ -66,7 +67,7 @@ def test_app_handle_response_201_abs():
     res = app._handle_request(req)
     print(res)
     assert res.status == '201 Created'
-    assert res.body == ''
+    assert res.body == b''
     assert res.location == '/res2/test'
 
 
@@ -77,7 +78,7 @@ def test_app_handle_response_201_rel():
     res = app._handle_request(req)
     print(res)
     assert res.status == '201 Created'
-    assert res.body == ''
+    assert res.body == b''
     assert res.location == '/res2/foo'
 
 
@@ -88,7 +89,7 @@ def test_app_handle_response_201_ext():
     res = app._handle_request(req)
     print(res)
     assert res.status == '201 Created'
-    assert res.body == ''
+    assert res.body == b''
     assert res.location == '/res2/foo'
 
 
@@ -105,47 +106,47 @@ def test_app_handle_options():
 def test_app_get_simple():
     """Application handles GET request and ignored POST data in that case."""
     app = wsgiservice.get_app(globals())
-    body = 'foo=42&baz=foobar'
+    body = b'foo=42&baz=foobar'
     req = Request.blank('/res1/theid', {
         'CONTENT_LENGTH': str(len(body)),
         'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-        'wsgi.input': io.StringIO(body)})
+        'wsgi.input': io.BytesIO(body)})
     res = app._handle_request(req)
     print(res)
     assert res.status == '200 OK'
     assert res._headers['Content-MD5'] == '8d5a8ef21b4afff94c937faabfdf11fa'
-    assert res.body == "<response>GET was called with id theid, " \
-        "foo None</response>"
+    assert res.body == b"<response>GET was called with id theid, " \
+        b"foo None</response>"
 
 
 def test_app_head_revert_to_get_simple():
     """Application converts a HEAD to a GET request but doesn't send body."""
     app = wsgiservice.get_app(globals())
-    body = 'foo=42&baz=foobar'
+    body = b'foo=42&baz=foobar'
     req = Request.blank('/res1/theid', {
         'REQUEST_METHOD': 'HEAD',
         'CONTENT_LENGTH': str(len(body)),
         'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-        'wsgi.input': io.StringIO(body)})
+        'wsgi.input': io.BytesIO(body)})
     res = app._handle_request(req)
     print(res)
     assert res.status == '200 OK'
-    assert res.body == ''
+    assert res.body == b''
 
 
 def test_app_post_simple():
     """Application handles normal POST request."""
     app = wsgiservice.get_app(globals())
-    body = 'foo=42&baz=foobar'
+    body = b'foo=42&baz=foobar'
     req = Request.blank('/res1/theid', {
         'REQUEST_METHOD': 'POST', 'CONTENT_LENGTH': str(len(body)),
         'CONTENT_TYPE': 'application/x-www-form-urlencoded',
-        'wsgi.input': io.StringIO(body)})
+        'wsgi.input': io.BytesIO(body)})
     res = app._handle_request(req)
     print(res)
     assert res.status == '200 OK'
-    assert res.body == "<response>POST was called with id theid, " \
-        "foo 42</response>"
+    assert res.body == b"<response>POST was called with id theid, " \
+        b"foo 42</response>"
 
 
 def test_app_wsgi():
@@ -160,7 +161,7 @@ def test_app_wsgi():
     res = app(env, start_response)
     print(res)
     mox.Verify(start_response)
-    assert res == ['"GET was called with id theid, foo None"']
+    assert res == [b'"GET was called with id theid, foo None"']
 
 
 def test_validation_method():
@@ -317,7 +318,7 @@ def test_etag_if_none_match_get_true():
     req = Request.blank('/res4?id=myid', {'HTTP_IF_NONE_MATCH': '"myid_xml"'})
     res = app._handle_request(req)
     print(res)
-    assert res.body == ''
+    assert res.body == b''
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
     assert 'Content-Type' not in res.headers
@@ -330,7 +331,7 @@ def test_etag_if_none_match_head_true():
         {'HTTP_IF_NONE_MATCH': '"myid_xml"', 'REQUEST_METHOD': 'HEAD'})
     res = app._handle_request(req)
     print(res)
-    assert res.body == ''
+    assert res.body == b''
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
 
@@ -373,7 +374,7 @@ def test_if_modified_since_false():
         {'HTTP_IF_MODIFIED_SINCE': 'Fri, 01 May 2009 14:30:00 GMT'})
     res = app._handle_request(req)
     print(res)
-    assert res.body == ''
+    assert res.body == b''
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res._headers['ETag'] == '"myid_xml"'
     assert res.status == '304 Not Modified'
@@ -410,7 +411,7 @@ def test_if_unmodified_since_false_head():
         'REQUEST_METHOD': 'HEAD'})
     res = app._handle_request(req)
     print(res)
-    assert res.body == ''
+    assert res.body == b''
     assert res._headers['ETag'] == '"myid_xml"'
     assert res._headers['Last-Modified'] == 'Fri, 01 May 2009 14:30:00 GMT'
     assert res.status == '412 Precondition Failed'
@@ -448,7 +449,7 @@ def test_verify_content_md5_invalid():
     app = wsgiservice.get_app(globals())
     req = Request.blank('/res1/theid', {
         'HTTP_CONTENT_MD5': '89d5739baabbbe65be35cbe61c88e06d',
-        'wsgi.input': io.StringIO('foobar')})
+        'wsgi.input': io.BytesIO(b'foobar')})
     res = app._handle_request(req)
     print(res)
     print(res.status)
@@ -456,8 +457,8 @@ def test_verify_content_md5_invalid():
     assert 'ETag' not in res._headers
     assert 'Last-Modified' not in res._headers
     assert res.status == '400 Bad Request'
-    assert res.body == '<response><error>Invalid Content-MD5 request ' \
-        'header.</error></response>'
+    assert res.body == b'<response><error>Invalid Content-MD5 request ' \
+        b'header.</error></response>'
 
 
 def test_verify_content_md5_valid():
@@ -466,7 +467,7 @@ def test_verify_content_md5_valid():
     req = Request.blank('/res1/theid', {
         'HTTP_CONTENT_MD5': '89d5739baabbbe65be35cbe61c88e06d',
     })
-    req.body_file = io.StringIO('Foobar')
+    req.body_file = io.BytesIO(b'Foobar')
     res = app._handle_request(req)
     print(res)
     assert res.status == '200 OK'
@@ -479,7 +480,7 @@ def test_exception_json():
     res = app._handle_request(req)
     print(res)
     assert res.status == '500 Internal Server Error'
-    assert res.body == '{"error": "Some random exception."}'
+    assert res.body == b'{"error": "Some random exception."}'
 
 
 def test_exception_xml():
@@ -489,8 +490,8 @@ def test_exception_xml():
     res = app._handle_request(req)
     print(res)
     assert res.status == '500 Internal Server Error'
-    assert res.body == '<response><error>Some random exception.' \
-        '</error></response>'
+    assert res.body == b'<response><error>Some random exception.' \
+        b'</error></response>'
 
 
 def test_res6_default():
@@ -500,7 +501,7 @@ def test_res6_default():
     res = app._handle_request(req)
     print(res)
     assert res.status == '200 OK'
-    assert res.body == '<response>works</response>'
+    assert res.body == b'<response>works</response>'
 
 
 def test_notfound_xml():
@@ -510,7 +511,7 @@ def test_notfound_xml():
     res = app._handle_request(req)
     print(res)
     assert res.status == '404 Not Found'
-    assert res.body == '<response><error>Not Found</error></response>'
+    assert res.body == b'<response><error>Not Found</error></response>'
 
 
 class AbstractResource(wsgiservice.Resource):
@@ -595,8 +596,10 @@ class Resource6(wsgiservice.Resource):
     def GET(self, id):
         return self.items[id]
 
+
 class NotAResource():
     def __getattr__(self, name):
         return name
+
 
 not_a_class = NotAResource()

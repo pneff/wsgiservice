@@ -1,4 +1,5 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 setup(
     name='WsgiService',
     # Version number also needs to be updated in wsgiservice/__init__.py
@@ -17,7 +18,7 @@ setup(
     ],
     tests_require=[
         'nose',
-        'mox',
+        'mox3',
     ],
     test_suite='nose.collector',
     license='BSD',

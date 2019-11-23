@@ -3,12 +3,13 @@ import inspect
 import json
 import logging
 import re
-import webob
 from xml.sax.saxutils import escape as xml_escape
-from wsgiservice.status import *
+
+import webob
 from wsgiservice import xmlserializer
 from wsgiservice.decorators import mount
-from wsgiservice.exceptions import ValidationException, ResponseException
+from wsgiservice.exceptions import ResponseException, ValidationException
+from wsgiservice.status import *
 
 logger = logging.getLogger(__name__)
 
@@ -493,8 +494,12 @@ class Resource(object):
                 to_type = re.sub('[^a-zA-Z_]', '_', self.type)
                 to_type_method = 'to_' + to_type
                 if hasattr(self, to_type_method):
-                    self.response.body = getattr(self, to_type_method)(
+                    body = getattr(self, to_type_method)(
                         self.response.body_raw)
+                    if isinstance(body, str):
+                        body = body.encode('utf8')
+                    self.response.body = body
+
             del self.response.body_raw
 
     def to_application_json(self, raw):

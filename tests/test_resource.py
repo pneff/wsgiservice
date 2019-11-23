@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+
 import webob
 import wsgiservice
 
@@ -144,10 +145,10 @@ def test_convert_params():
     print(res)
     assert res.status_int == 200
     obj = json.loads(res.body)
-    assert obj['foo'] is 193
-    assert obj['foo_type'] == "<type 'int'>"
-    assert obj['bar'] == "u'testing'"
-    assert obj['bar_type'] == "<type 'str'>"
+    assert obj['foo'] == 193
+    assert obj['foo_type'] == "<class 'int'>"
+    assert obj['bar'] == "'testing'"
+    assert obj['bar_type'] == "<class 'str'>"
 
 
 def test_latin1_submit():
@@ -171,7 +172,7 @@ def test_latin1_submit():
     print(res)
     assert res.status_int == 200
     obj = json.loads(res.body)
-    assert obj == {'body': "'F\\xfchler'"}
+    assert obj == {'body': "b'F\\xfchler'"}
 
 
 def test_convert_params_validate():

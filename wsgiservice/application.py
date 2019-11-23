@@ -1,5 +1,6 @@
 """Components responsible for building the WSGI application."""
 import logging
+
 import webob
 import wsgiservice
 import wsgiservice.resource
@@ -99,7 +100,7 @@ class Application(object):
             path_params=path_params, application=self)
         response = instance()
         if request.method == 'HEAD':
-            response.body = ''
+            response.body = b''
         return response
 
 

@@ -6,7 +6,7 @@ response headers which are highly recommended or required. For example the
 
 The following status codes don't have a method here:
 """
-from urlparse import urljoin
+from urllib.parse import urljoin
 from wsgiservice.exceptions import ResponseException
 
 

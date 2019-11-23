@@ -4,9 +4,9 @@ applications.
 """
 __version__ = "0.4.0"
 
-from application import get_app
-from decorators import mount, validate, expires
-import exceptions
-from resource import Resource
-import routing
-from status import *
+from .application import get_app
+from .decorators import mount, validate, expires
+from . import exceptions
+from .resource import Resource
+from . import routing
+from .status import *

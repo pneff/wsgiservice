@@ -7,10 +7,10 @@ from xml.sax.saxutils import escape as xml_escape
 
 # Regular expression matching all the illegal XML characters.
 RE_ILLEGAL_XML = re.compile(
-    u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])|([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
-    (unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
-     unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
-     unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff)))
+    '([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])|([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
+    (chr(0xd800),chr(0xdbff),chr(0xdc00),chr(0xdfff),
+     chr(0xd800),chr(0xdbff),chr(0xdc00),chr(0xdfff),
+     chr(0xd800),chr(0xdbff),chr(0xdc00),chr(0xdfff)))
 
 
 def dumps(obj, root_tag):
@@ -45,7 +45,7 @@ def _get_xml_value(value):
     """
     retval = []
     if isinstance(value, dict):
-        for key, value in value.iteritems():
+        for key, value in value.items():
             retval.append('<' + xml_escape(str(key)) + '>')
             retval.append(_get_xml_value(value))
             retval.append('</' + xml_escape(str(key)) + '>')
@@ -56,7 +56,7 @@ def _get_xml_value(value):
             retval.append('</child>')
     elif isinstance(value, bool):
         retval.append(xml_escape(str(value).lower()))
-    elif isinstance(value, unicode):
+    elif isinstance(value, str):
         retval.append(xml_escape(value.encode('utf-8')))
     else:
         retval.append(xml_escape(str(value)))

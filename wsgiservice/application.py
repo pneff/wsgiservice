@@ -128,7 +128,7 @@ def get_app(defs, add_help=True):
 
         return False
 
-    resources = [d for d in defs.values() if is_resource(d)]
+    resources = [d for d in list(defs.values()) if is_resource(d)]
     if add_help:
         resources.append(wsgiservice.resource.Help)
     return Application(resources)

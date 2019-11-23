@@ -20,9 +20,9 @@ def test_default_value():
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
-    print res
+    print(res)
     obj = json.loads(res.body)
-    print obj
+    print(obj)
     assert obj == {'id': 5, 'foo': 'baz1', 'bar': 'baz2'}
 
 
@@ -41,9 +41,9 @@ def test_default_value_overwrite():
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
-    print res
+    print(res)
     obj = json.loads(res.body)
-    print obj
+    print(obj)
     assert obj == {'id': '8', 'foo': 'bar'}
 
 
@@ -63,9 +63,9 @@ def test_default_value_validate_novalue():
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
-    print res
+    print(res)
     obj = json.loads(res.body)
-    print obj
+    print(obj)
     assert obj == {'id': 5, 'foo': 'bar'}
 
 
@@ -85,10 +85,10 @@ def test_default_value_validate():
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
-    print res
+    print(res)
     assert res.status_int == 400
     obj = json.loads(res.body)
-    print obj
+    print(obj)
     assert obj == {"error": "Value for id must not be empty."}
 
 
@@ -108,10 +108,10 @@ def test_validate_empty():
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
-    print res
+    print(res)
     assert res.status_int == 400
     obj = json.loads(res.body)
-    print obj
+    print(obj)
     assert obj == {"error": "Value for id must not be empty."}
 
 
@@ -134,7 +134,7 @@ def test_convert_params():
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
-    print res
+    print(res)
     assert res.status_int == 200
     obj = json.loads(res.body)
     assert obj['foo'] is 193
@@ -160,7 +160,7 @@ def test_convert_params_validate():
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
-    print res
+    print(res)
     assert res.status_int == 400
     obj = json.loads(res.body)
     assert obj == {"error": "a value b does not validate."}
@@ -179,7 +179,7 @@ def test_raise_400_invalid_json():
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
-    print res
+    print(res)
     assert res.status_int == 400
     obj = json.loads(res.body)
     assert obj == {"error": "Invalid JSON content data"}
@@ -201,7 +201,7 @@ def test_accept_non_dict():
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
-    print res
+    print(res)
     assert res.status_int == 200
     obj = json.loads(res.body)
     assert obj == {}

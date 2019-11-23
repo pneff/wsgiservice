@@ -137,17 +137,17 @@ class Resource(object):
             self.handle_ignored_resources()
             self.assert_conditions()
             self.response.body_raw = self.call_method(self.method)
-        except ResponseException, e:
+        except ResponseException as e:
             # a response was raised, catch it
             self.response = e.response
             r = e.response
             if r.status_int == 404 and not r.body and not hasattr(r, 'body_raw'):
                 self.handle_exception_404(e)
-        except self.NOT_FOUND, e:
+        except self.NOT_FOUND as e:
             self.handle_exception_404(e)
-        except ValidationException, e:
+        except ValidationException as e:
             self.handle_exception(e, status=400)
-        except Exception, e:
+        except Exception as e:
             self.handle_exception(e)
         self.convert_response()
         self.set_response_headers()
@@ -167,7 +167,7 @@ class Resource(object):
         retval = {}
         data = self.get_request_data()
         for subdata in data:
-            for key, value in subdata.iteritems():
+            for key, value in subdata.items():
                 if not key in retval:
                     retval[key] = value
 
@@ -431,7 +431,7 @@ class Resource(object):
         rules = self._get_validation(method, param)
         if not rules:
             return
-        if value is None or (isinstance(value, basestring) and len(value) == 0):
+        if value is None or (isinstance(value, str) and len(value) == 0):
             raise ValidationException(
                 "Value for {0} must not be empty.".format(param))
         elif rules.get('re'):
@@ -477,9 +477,9 @@ class Resource(object):
         """
         if hasattr(method, '_validations') and param in method._validations:
             return method._validations[param]
-        elif (hasattr(method.im_class, '_validations') and
-                param in method.im_class._validations):
-            return method.im_class._validations[param]
+        elif (hasattr(method.__self__.__class__, '_validations') and
+                param in method.__self__.__class__._validations):
+            return method.__self__.__class__._validations[param]
         else:
             return None
 
@@ -1151,7 +1151,7 @@ class Help(Resource):
             retval.append('<tr><th>Path</th><td>{0}</td>'.format(xml_escape(
                 resource['path'])))
             representations = [value + ' (.' + key + ')' for key, value
-                in resource['properties']['EXTENSION_MAP'].iteritems()]
+                in resource['properties']['EXTENSION_MAP'].items()]
             retval.append('<tr><th>Representations</th><td>{0}</td>'.format(
                 xml_escape(', '.join(representations))))
             retval.append('</table>')
@@ -1167,7 +1167,7 @@ class Help(Resource):
         :param resource: The documentation of one resource.
         :type resource: Dictionary
         """
-        for method_name, method in resource['methods'].iteritems():
+        for method_name, method in resource['methods'].items():
             retval.append('<h3 id="{0}_{1}">{1}</h3>'.format(
                 xml_escape(resource['name']), xml_escape(method_name)))
             retval.append('<div class="method_details" id="{0}_{1}_container">'.format(
@@ -1177,7 +1177,7 @@ class Help(Resource):
             if method['parameters']:
                 retval.append('<table class="parameters">')
                 retval.append('<tr><th>Name</th><th>Mandatory</th><th>Description</th><th>Validation</th>')
-                for param_name, param in method['parameters'].iteritems():
+                for param_name, param in method['parameters'].items():
                     # filter out any parameters that can't be written as html.
                     # can contain stuff in other encodings than ascii,
                     # so convert it to ascii

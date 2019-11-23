@@ -9,3 +9,5 @@ docs/_build/
 .noseids
 build/
 dist/
+.eggs/
+*.bak

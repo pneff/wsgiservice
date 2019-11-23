@@ -2,6 +2,8 @@
 """Tests for handling of JSON request data."""
 import json
 
+import six
+
 import webob
 import wsgiservice
 
@@ -140,11 +142,17 @@ def test_convert_params():
     assert res.status_int == 200
     obj = json.loads(res.body)
     assert obj['foo'] == 193
-    assert obj['foo_type'] == "<class 'int'>"
-    assert obj['bar'] == "'testing'"
-    assert obj['bar_type'] == "<class 'str'>"
     assert obj['baz'] == 212
-    assert obj['baz_type'] == "<class 'int'>"
+    if six.PY2:
+        assert obj['bar'] == "u'testing'"
+        assert obj['foo_type'] == "<type 'int'>"
+        assert obj['bar_type'] == "<type 'str'>"
+        assert obj['baz_type'] == "<type 'int'>"
+    else:
+        assert obj['bar'] == "'testing'"
+        assert obj['foo_type'] == "<class 'int'>"
+        assert obj['bar_type'] == "<class 'str'>"
+        assert obj['baz_type'] == "<class 'int'>"
 
 
 def test_convert_params_validate():

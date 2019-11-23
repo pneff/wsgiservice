@@ -21,6 +21,6 @@ def test_serialisation_bool():
 
 def test_serialisation_unicode():
     """Unicode strings are converted to UTF-8."""
-    s = dumps({'test': 'gfröhrli'}, 'response')
+    s = dumps({'test': u'gfröhrli'}, 'response')
     print(s)
-    assert s == '<response><test>gfröhrli</test></response>'
+    assert s == u'<response><test>gfröhrli</test></response>'

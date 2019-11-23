@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import json
 
+import six
+
 import webob
 import wsgiservice
 
@@ -146,9 +148,14 @@ def test_convert_params():
     assert res.status_int == 200
     obj = json.loads(res.body)
     assert obj['foo'] == 193
-    assert obj['foo_type'] == "<class 'int'>"
-    assert obj['bar'] == "'testing'"
-    assert obj['bar_type'] == "<class 'str'>"
+    if six.PY2:
+        assert obj['bar'] == "u'testing'"
+        assert obj['foo_type'] == "<type 'int'>"
+        assert obj['bar_type'] == "<type 'str'>"
+    else:
+        assert obj['bar'] == "'testing'"
+        assert obj['foo_type'] == "<class 'int'>"
+        assert obj['bar_type'] == "<class 'str'>"
 
 
 def test_latin1_submit():
@@ -165,14 +172,17 @@ def test_latin1_submit():
     req = webob.Request.blank('/test', {'REQUEST_METHOD': 'POST'},
         headers={'Accept': 'application/json',
                  'Content-Type': 'application/x-www-form-urlencoded'})
-    req.body = 'Fühler'.encode('latin1')
+    req.body = u'Fühler'.encode('latin1')
     res = webob.Response()
     usr = User(request=req, response=res, path_params={})
     res = usr()
     print(res)
     assert res.status_int == 200
     obj = json.loads(res.body)
-    assert obj == {'body': "b'F\\xfchler'"}
+    if six.PY2:
+        assert obj == {'body': "'F\\xfchler'"}
+    else:
+        assert obj == {'body': "b'F\\xfchler'"}
 
 
 def test_convert_params_validate():

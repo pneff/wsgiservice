@@ -5,6 +5,8 @@ import logging
 import re
 from xml.sax.saxutils import escape as xml_escape
 
+import six
+
 import webob
 from wsgiservice import xmlserializer
 from wsgiservice.decorators import mount
@@ -397,7 +399,7 @@ class Resource(object):
         """
         params = []
         method = getattr(self, method_name)
-        argspec = inspect.getfullargspec(method)
+        method, argspec = self._get_argspec(method)
         method_params = argspec.args
         if method_params and len(method_params) > 1:
             method_params.pop(0)  # pop the self off
@@ -431,9 +433,10 @@ class Resource(object):
             value is invalid for the given method and parameter.
         """
         rules = self._get_validation(method, param)
+
         if not rules:
             return
-        if value is None or (isinstance(value, str) and len(value) == 0):
+        if value is None or (isinstance(value, six.text_type) and len(value) == 0):
             raise ValidationException(
                 "Value for {0} must not be empty.".format(param))
         elif rules.get('re'):
@@ -497,8 +500,8 @@ class Resource(object):
                 if hasattr(self, to_type_method):
                     body = getattr(self, to_type_method)(
                         self.response.body_raw)
-                    if isinstance(body, str):
-                        body = body.encode('utf8')
+                    if not isinstance(body, bytes):
+                        body = body.encode(self.charset)
                     self.response.body = body
 
             del self.response.body_raw
@@ -539,7 +542,7 @@ class Resource(object):
         """
         logger.exception(
             "An exception occurred while handling the request: %s", e)
-        self.response.body_raw = {'error': str(e)}
+        self.response.body_raw = {'error': six.text_type(e)}
         self.response.status = status
 
     def handle_exception_404(self, e):
@@ -619,6 +622,15 @@ class Resource(object):
                     data[key] = value
         return data
 
+    def _get_argspec(self, method):
+        """Return method arguments for the given method.
+        """
+        if six.PY2:
+            argspec = inspect.getargspec(method)
+        else:
+            argspec = inspect.getfullargspec(method)
+        return method, argspec
+
 
 @mount('/_internal/help')
 class Help(Resource):
@@ -694,7 +706,7 @@ class Help(Resource):
         :param method: The method to get parameters from.
         :type method: Python function
         """
-        argspec = inspect.getfullargspec(method)
+        argspec = self._get_argspec(method)
         method_params = argspec.args
         if method_params:
             method_params.pop(0)  # pop the self off
@@ -1198,7 +1210,7 @@ class Help(Resource):
                         if type(param['mandatory']) is dict and \
                                 'convert' in param['mandatory']:
                             param['mandatory']['convert'] = \
-                                    str(param['mandatory']['convert'])
+                                six.text_type(param['mandatory']['convert'])
                     if param['path_param']:
                         mandatory += ' (Path parameter)'
                     if param['validate_re']:

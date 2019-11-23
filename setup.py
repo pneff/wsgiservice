@@ -15,6 +15,7 @@ setup(
     install_requires=[
         'decorator',
         'webob >= 1.2b2',
+        'six',
     ],
     tests_require=[
         'nose',

@@ -230,7 +230,10 @@ def test_with_expires_vary():
     print(str(res))
     print(res._headers)
     assert res._headers['Cache-Control'] == 'max-age=86400'
-    assert res._headers['Vary'] == 'Authorization, Accept'
+    vary = res._headers['Vary'].split(', ')
+    assert len(vary) == 2
+    assert 'Authorization' in vary
+    assert 'Accept' in vary
 
 
 def test_with_expires_calculations():

@@ -397,11 +397,12 @@ class Resource(object):
         """
         params = []
         method = getattr(self, method_name)
-
-        method_params, varargs, varkw, defaults = inspect.getargspec(method)
+        argspec = inspect.getfullargspec(method)
+        method_params = argspec.args
         if method_params and len(method_params) > 1:
             method_params.pop(0)  # pop the self off
-            data = self._merge_defaults(self.data, method_params, defaults)
+            data = self._merge_defaults(
+                self.data, method_params, argspec.defaults)
             for param in method_params:
                 value = data.get(param)
                 self.validate_param(method, param, value)
@@ -693,9 +694,10 @@ class Help(Resource):
         :param method: The method to get parameters from.
         :type method: Python function
         """
-        method_params, varargs, varkw, defaults = inspect.getargspec(method)
+        argspec = inspect.getfullargspec(method)
+        method_params = argspec.args
         if method_params:
-            method_params.pop(0) # pop the self off
+            method_params.pop(0)  # pop the self off
         self._add_path_parameters(method_params, res)
         retval = {}
         for param in method_params:

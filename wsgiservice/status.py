@@ -6,7 +6,7 @@ response headers which are highly recommended or required. For example the
 
 The following status codes don't have a method here:
 """
-from urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 from wsgiservice.exceptions import ResponseException
 
 
@@ -55,7 +55,7 @@ def raise_204(instance):
     :raises: :class:`webob.exceptions.ResponseException` of status 204
     """
     instance.response.status = 204
-    instance.response.body = ''
+    instance.response.body = b''
     instance.response.body_raw = None
     raise ResponseException(instance.response)
 
@@ -69,7 +69,7 @@ def raise_205(instance):
     :raises: :class:`webob.exceptions.ResponseException` of status 205
     """
     instance.response.status = 205
-    instance.response.body = ''
+    instance.response.body = b''
     instance.response.body_raw = None
     raise ResponseException(instance.response)
 
@@ -140,7 +140,7 @@ def raise_304(instance):
              section 10.3.5.
     """
     instance.response.status = 304
-    instance.response.body = ''
+    instance.response.body = b''
     instance.response.body_raw = None
     raise ResponseException(instance.response)
 

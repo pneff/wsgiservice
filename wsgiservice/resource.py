@@ -3,12 +3,15 @@ import inspect
 import json
 import logging
 import re
-import webob
 from xml.sax.saxutils import escape as xml_escape
-from wsgiservice.status import *
+
+import six
+
+import webob
 from wsgiservice import xmlserializer
 from wsgiservice.decorators import mount
-from wsgiservice.exceptions import ValidationException, ResponseException
+from wsgiservice.exceptions import ResponseException, ValidationException
+from wsgiservice.status import *
 
 logger = logging.getLogger(__name__)
 
@@ -137,17 +140,17 @@ class Resource(object):
             self.handle_ignored_resources()
             self.assert_conditions()
             self.response.body_raw = self.call_method(self.method)
-        except ResponseException, e:
+        except ResponseException as e:
             # a response was raised, catch it
             self.response = e.response
             r = e.response
             if r.status_int == 404 and not r.body and not hasattr(r, 'body_raw'):
                 self.handle_exception_404(e)
-        except self.NOT_FOUND, e:
+        except self.NOT_FOUND as e:
             self.handle_exception_404(e)
-        except ValidationException, e:
+        except ValidationException as e:
             self.handle_exception(e, status=400)
-        except Exception, e:
+        except Exception as e:
             self.handle_exception(e)
         self.convert_response()
         self.set_response_headers()
@@ -167,7 +170,7 @@ class Resource(object):
         retval = {}
         data = self.get_request_data()
         for subdata in data:
-            for key, value in subdata.iteritems():
+            for key, value in subdata.items():
                 if not key in retval:
                     retval[key] = value
 
@@ -396,11 +399,12 @@ class Resource(object):
         """
         params = []
         method = getattr(self, method_name)
-
-        method_params, varargs, varkw, defaults = inspect.getargspec(method)
+        method, argspec = self._get_argspec(method)
+        method_params = argspec.args
         if method_params and len(method_params) > 1:
             method_params.pop(0)  # pop the self off
-            data = self._merge_defaults(self.data, method_params, defaults)
+            data = self._merge_defaults(
+                self.data, method_params, argspec.defaults)
             for param in method_params:
                 value = data.get(param)
                 self.validate_param(method, param, value)
@@ -429,9 +433,10 @@ class Resource(object):
             value is invalid for the given method and parameter.
         """
         rules = self._get_validation(method, param)
+
         if not rules:
             return
-        if value is None or (isinstance(value, basestring) and len(value) == 0):
+        if value is None or (isinstance(value, six.text_type) and len(value) == 0):
             raise ValidationException(
                 "Value for {0} must not be empty.".format(param))
         elif rules.get('re'):
@@ -477,9 +482,9 @@ class Resource(object):
         """
         if hasattr(method, '_validations') and param in method._validations:
             return method._validations[param]
-        elif (hasattr(method.im_class, '_validations') and
-                param in method.im_class._validations):
-            return method.im_class._validations[param]
+        elif (hasattr(method.__self__.__class__, '_validations') and
+                param in method.__self__.__class__._validations):
+            return method.__self__.__class__._validations[param]
         else:
             return None
 
@@ -493,8 +498,12 @@ class Resource(object):
                 to_type = re.sub('[^a-zA-Z_]', '_', self.type)
                 to_type_method = 'to_' + to_type
                 if hasattr(self, to_type_method):
-                    self.response.body = getattr(self, to_type_method)(
+                    body = getattr(self, to_type_method)(
                         self.response.body_raw)
+                    if not isinstance(body, bytes):
+                        body = body.encode(self.charset)
+                    self.response.body = body
+
             del self.response.body_raw
 
     def to_application_json(self, raw):
@@ -533,7 +542,7 @@ class Resource(object):
         """
         logger.exception(
             "An exception occurred while handling the request: %s", e)
-        self.response.body_raw = {'error': str(e)}
+        self.response.body_raw = {'error': six.text_type(e)}
         self.response.status = status
 
     def handle_exception_404(self, e):
@@ -613,6 +622,15 @@ class Resource(object):
                     data[key] = value
         return data
 
+    def _get_argspec(self, method):
+        """Return method arguments for the given method.
+        """
+        if six.PY2:
+            argspec = inspect.getargspec(method)
+        else:
+            argspec = inspect.getfullargspec(method)
+        return method, argspec
+
 
 @mount('/_internal/help')
 class Help(Resource):
@@ -688,9 +706,10 @@ class Help(Resource):
         :param method: The method to get parameters from.
         :type method: Python function
         """
-        method_params, varargs, varkw, defaults = inspect.getargspec(method)
+        argspec = self._get_argspec(method)
+        method_params = argspec.args
         if method_params:
-            method_params.pop(0) # pop the self off
+            method_params.pop(0)  # pop the self off
         self._add_path_parameters(method_params, res)
         retval = {}
         for param in method_params:
@@ -1151,7 +1170,7 @@ class Help(Resource):
             retval.append('<tr><th>Path</th><td>{0}</td>'.format(xml_escape(
                 resource['path'])))
             representations = [value + ' (.' + key + ')' for key, value
-                in resource['properties']['EXTENSION_MAP'].iteritems()]
+                in resource['properties']['EXTENSION_MAP'].items()]
             retval.append('<tr><th>Representations</th><td>{0}</td>'.format(
                 xml_escape(', '.join(representations))))
             retval.append('</table>')
@@ -1167,7 +1186,7 @@ class Help(Resource):
         :param resource: The documentation of one resource.
         :type resource: Dictionary
         """
-        for method_name, method in resource['methods'].iteritems():
+        for method_name, method in resource['methods'].items():
             retval.append('<h3 id="{0}_{1}">{1}</h3>'.format(
                 xml_escape(resource['name']), xml_escape(method_name)))
             retval.append('<div class="method_details" id="{0}_{1}_container">'.format(
@@ -1177,7 +1196,7 @@ class Help(Resource):
             if method['parameters']:
                 retval.append('<table class="parameters">')
                 retval.append('<tr><th>Name</th><th>Mandatory</th><th>Description</th><th>Validation</th>')
-                for param_name, param in method['parameters'].iteritems():
+                for param_name, param in method['parameters'].items():
                     # filter out any parameters that can't be written as html.
                     # can contain stuff in other encodings than ascii,
                     # so convert it to ascii
@@ -1191,7 +1210,7 @@ class Help(Resource):
                         if type(param['mandatory']) is dict and \
                                 'convert' in param['mandatory']:
                             param['mandatory']['convert'] = \
-                                    str(param['mandatory']['convert'])
+                                six.text_type(param['mandatory']['convert'])
                     if param['path_param']:
                         mandatory += ' (Path parameter)'
                     if param['validate_re']:

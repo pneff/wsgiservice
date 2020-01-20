@@ -5,12 +5,15 @@ returned as XML.
 import re
 from xml.sax.saxutils import escape as xml_escape
 
+from six import unichr as chr
+from six import binary_type, text_type
+
 # Regular expression matching all the illegal XML characters.
 RE_ILLEGAL_XML = re.compile(
-    u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])|([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
-    (unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
-     unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
-     unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff)))
+    u'([\u0000-\u0008\u000b-\u000c\u000e-\u001f\ufffe-\uffff])|([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' %
+    (chr(0xd800), chr(0xdbff), chr(0xdc00), chr(0xdfff),
+     chr(0xd800), chr(0xdbff), chr(0xdc00), chr(0xdfff),
+     chr(0xd800), chr(0xdbff), chr(0xdc00), chr(0xdfff)))
 
 
 def dumps(obj, root_tag):
@@ -45,20 +48,21 @@ def _get_xml_value(value):
     """
     retval = []
     if isinstance(value, dict):
-        for key, value in value.iteritems():
-            retval.append('<' + xml_escape(str(key)) + '>')
+        for key, value in value.items():
+            retval.append('<' + xml_escape(text_type(key)) + '>')
             retval.append(_get_xml_value(value))
-            retval.append('</' + xml_escape(str(key)) + '>')
+            retval.append('</' + xml_escape(text_type(key)) + '>')
     elif isinstance(value, list):
         for key, value in enumerate(value):
-            retval.append('<child order="' + xml_escape(str(key)) + '">')
+            retval.append('<child order="' + xml_escape(text_type(key)) + '">')
             retval.append(_get_xml_value(value))
             retval.append('</child>')
     elif isinstance(value, bool):
-        retval.append(xml_escape(str(value).lower()))
-    elif isinstance(value, unicode):
+        retval.append(xml_escape(text_type(value).lower()))
+    elif isinstance(value, binary_type):
         retval.append(xml_escape(value.encode('utf-8')))
+    elif isinstance(value, text_type):
+        retval.append(xml_escape(value))
     else:
-        retval.append(xml_escape(str(value)))
+        retval.append(xml_escape(text_type(value)))
     return "".join(retval)
-

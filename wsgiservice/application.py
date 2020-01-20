@@ -1,5 +1,6 @@
 """Components responsible for building the WSGI application."""
 import logging
+
 import webob
 import wsgiservice
 import wsgiservice.resource
@@ -99,7 +100,7 @@ class Application(object):
             path_params=path_params, application=self)
         response = instance()
         if request.method == 'HEAD':
-            response.body = ''
+            response.body = b''
         return response
 
 
@@ -128,7 +129,7 @@ def get_app(defs, add_help=True):
 
         return False
 
-    resources = [d for d in defs.values() if is_resource(d)]
+    resources = [d for d in list(defs.values()) if is_resource(d)]
     if add_help:
         resources.append(wsgiservice.resource.Help)
     return Application(resources)

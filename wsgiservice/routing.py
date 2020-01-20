@@ -1,5 +1,6 @@
 """Implements a simple routing class."""
 import re
+
 import wsgiservice
 
 
@@ -29,12 +30,12 @@ class Router(object):
                           classes to be served by this application.
         """
         tmp = []
-        for resource in resources:
+        for idx, resource in enumerate(resources):
             path = resource._path
             # Each slash counts as 10 priority, each variable takes one away
             priority = path.count('/') * 10 - path.count('{')
-            tmp.append((priority, resource))
-        return [resource for prio, resource in reversed(sorted(tmp))]
+            tmp.append((priority, idx))
+        return [resources[idx] for prio, idx in reversed(sorted(tmp))]
 
     def _compile(self, resources):
         """Compiles a list of match functions (using regular expressions) for

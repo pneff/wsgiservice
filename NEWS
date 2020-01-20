@@ -2,6 +2,11 @@ Summary of the important changes per WsgiService release. To get the full
 history use the commit log.
 
 
+1.0.0: January 20, 2020
+    - Upgrade to Python 3. Currently WsgiService currently supports Python 3
+      and Python 2.
+
+
 0.4.0: February 28, 2014
     - Resource: automatically handle JSON input. If the JSON data is a
       dictionary, then it is automatically passed into the methods, just like

@@ -11,13 +11,15 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import sys
+
 import wsgiservice
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.append(os.path.abspath('.'))
+# sys.path.append(os.path.abspath('.'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -39,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'WsgiService'
-copyright = u'2009-2014, Patrice Neff'
+copyright = u'2009-2020, Patrice Neff'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -175,7 +177,7 @@ htmlhelp_basename = 'WsgiServicedoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'WsgiService.tex', u'WsgiService Documentation',
+    ('index', 'WsgiService.tex', u'WsgiService Documentation',
    u'Patrice Neff', 'manual'),
 ]
 

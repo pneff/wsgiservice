@@ -1,6 +1,11 @@
 import hashlib
 import inspect
-import json
+
+try:
+    import ujson as json
+except ImportError:
+    import json
+
 import logging
 import re
 from xml.sax.saxutils import escape as xml_escape
